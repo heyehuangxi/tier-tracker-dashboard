@@ -60,10 +60,11 @@ export function FormationEditor({ mode }: { mode: Mode }) {
             <div className="mb-1.5 text-[10px] text-muted-foreground">{slot === 0 ? "大将" : "副将"}</div>
             <select className="slot-select font-semibold" value={s.generals[slot] ?? ""} onChange={e => update(i, x => { x.generals[slot] = e.target.value || null; return x; })} aria-label={`部隊${i + 1} ${slot === 0 ? "大将" : `副将${slot}`}`}>
               <option value="">— 武将を選択 —</option>
-              {poolG.map(gn => { const other = usedG.get(gn.id); const disabled = (s.generals.includes(gn.id) && s.generals[slot] !== gn.id) || (coexist && other !== undefined && other !== i); return <option key={gn.id} value={gn.id} disabled={disabled}>{"★".repeat(gn.rarity === 5 ? 5 : 4)} {gn.name}{coexist && other !== undefined && other !== i ? `（部隊${other + 1}で使用中）` : ""}</option>; })}
+              {poolG.map(gn => { const other = usedG.get(gn.id); const disabled = (s.generals.includes(gn.id) && s.generals[slot] !== gn.id) || (coexist && other !== undefined && other !== i); return <option key={gn.id} value={gn.id} disabled={disabled}>{gn.name}{coexist && other !== undefined && other !== i ? `（部隊${other + 1}で使用中）` : ""}</option>; })}
             </select>
-            {[0, 1].map(k => { const ti = slot * 2 + k; return <select key={k} className="slot-select mt-1.5" value={s.tactics[ti] ?? ""} onChange={e => update(i, x => { x.tactics[ti] = e.target.value || null; return x; })} aria-label={`部隊${i + 1} 戦法${ti + 1}`}>
-              <option value="">— 戦法 —</option>
+            <div className="inherent-field" aria-label={`部隊${i + 1} ${slot === 0 ? "大将" : `副将${slot}`} 固有戦法`} aria-readonly="true"><span className="text-[9px] text-muted-foreground">固有戦法</span><span className="truncate">{s.generals[slot] ? generalById.get(s.generals[slot]!)?.inherent : "武将を選択すると自動表示"}</span></div>
+            {[0, 1].map(k => { const ti = slot * 2 + k; return <select key={k} className="slot-select mt-1.5" value={s.tactics[ti] ?? ""} onChange={e => update(i, x => { x.tactics[ti] = e.target.value || null; return x; })} aria-label={`部隊${i + 1} ${slot === 0 ? "大将" : `副将${slot}`} 伝授戦法${k + 1}`}>
+              <option value="">— 伝授戦法{k + 1} —</option>
               {poolT.map(tc => { const other = usedT.get(tc.id); const disabled = (s.tactics.includes(tc.id) && s.tactics[ti] !== tc.id) || (coexist && other !== undefined && other !== i); return <option key={tc.id} value={tc.id} disabled={disabled}>[{tc.grade}] {tc.name}{coexist && other !== undefined && other !== i ? `（部隊${other + 1}）` : ""}</option>; })}
             </select>; })}
           </div>)}
@@ -77,5 +78,5 @@ export function FormationEditor({ mode }: { mode: Mode }) {
 export function FormationPreview({ squads }: { squads: Squad[] }) {
   const used = squads.map((s, i) => ({ s, i })).filter(({ s }) => s.generals.some(Boolean) || s.tactics.some(Boolean));
   if (!used.length) return <p className="text-[11px] text-muted-foreground">空の編成</p>;
-  return <div className="space-y-1.5">{used.map(({ s, i }) => <div key={i} className="text-[11px] leading-5"><span className="mr-2 font-semibold">部隊{i + 1}</span><span>{s.generals.map(id => (id ? generalById.get(id)?.name : "—")).join(" / ")}</span><span className="ml-2 text-muted-foreground">{s.tactics.filter(Boolean).map(id => tacticById.get(id!)?.name).join("・")}</span></div>)}</div>;
+  return <div className="space-y-1.5">{used.map(({ s, i }) => <div key={i} className="text-[11px] leading-5"><span className="mr-2 font-semibold">部隊{i + 1}</span>{[0, 1, 2].map(k => { const gid = s.generals[k]; const gn = gid ? generalById.get(gid) : undefined; const tx = [s.tactics[k * 2], s.tactics[k * 2 + 1]].filter(Boolean).map(id => tacticById.get(id!)?.name); return <span key={k} className="mr-3 inline-block">{gn ? gn.name : "—"}{gn && <span className="text-muted-foreground">（固有:{gn.inherent}{tx.length ? `／${tx.join("・")}` : ""}）</span>}</span>; })}</div>)}</div>;
 }

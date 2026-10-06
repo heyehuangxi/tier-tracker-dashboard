@@ -36,7 +36,7 @@ function Holdings() {
   const types = tab === "g" ? [...new Set(GENERALS.map(x => x.type))] : [...new Set(TACTICS.map(x => x.kind))];
 
   const groups = tab === "g"
-    ? [{ title: "名将（星5）", items: gq.filter(x => x.rarity === 5).map(x => ({ id: x.id, name: x.name, sub: `${x.faction}・${x.type}`, star: "★★★★★" })) }, { title: "良将（星4）", items: gq.filter(x => x.rarity === 4).map(x => ({ id: x.id, name: x.name, sub: `${x.faction}・${x.type}`, star: "★★★★" })) }]
+    ? [{ title: "名将（星5）", items: gq.filter(x => x.rarity === 5).map(x => ({ id: x.id, name: x.name, sub: `${x.faction}・${x.type}`, star: x.inherent })) }, { title: "良将（星4）", items: gq.filter(x => x.rarity === 4).map(x => ({ id: x.id, name: x.name, sub: `${x.faction}・${x.type}`, star: x.inherent })) }]
     : [{ title: "S戦法", items: tq.filter(x => x.grade === "S").map(x => ({ id: x.id, name: x.name, sub: x.kind, star: "S" })) }, { title: "A戦法", items: tq.filter(x => x.grade === "A").map(x => ({ id: x.id, name: x.name, sub: x.kind, star: "A" })) }];
   const list = tab === "g" ? g : t; const setList = tab === "g" ? setG : setT;
 
@@ -54,7 +54,7 @@ function Holdings() {
         <div className="flex gap-1"><Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setList([...new Set([...list, ...gr.items.map(x => x.id)])])}>全選択</Button><Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setList(list.filter(id => !gr.items.some(x => x.id === id)))}>全解除</Button></div></div>
       {gr.items.length === 0 ? <p className="text-[11px] text-muted-foreground">該当なし</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {gr.items.map(x => { const on = list.includes(x.id); return <button key={x.id} type="button" className="owned-card" data-on={on} aria-pressed={on} onClick={() => toggle(list, setList, x.id)}>
-          <span className="flex items-center justify-between"><span className="text-[10px] text-gold">{x.star}</span><span className="owned-check" aria-hidden="true">{on ? "✓" : ""}</span></span>
+          <span className="flex items-center justify-between"><span className="truncate text-[10px] text-gold">{tab === "g" ? `固有: ${x.star}` : `${x.star}戦法`}</span><span className="owned-check" aria-hidden="true">{on ? "✓" : ""}</span></span>
           <span className="mt-1 block text-[13px] font-semibold">{x.name}</span><span className="block text-[10px] text-muted-foreground">{x.sub}</span>
         </button>; })}
       </div>}

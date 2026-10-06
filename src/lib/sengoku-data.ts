@@ -1,8 +1,9 @@
 // デモ用のダミーデータ（実際のゲームデータではありません）
-export type General = { id: string; name: string; rarity: 5 | 4; faction: string; type: string };
+export type General = { id: string; name: string; rarity: 5 | 4; faction: string; type: string; inherent: string };
 export type Tactic = { id: string; name: string; grade: "S" | "A"; kind: string };
 
-const g = (name: string, rarity: 5 | 4, faction: string, type: string): General => ({ id: `g-${name}`, name, rarity, faction, type });
+const g = (name: string, rarity: 5 | 4, faction: string, type: string): General => ({ id: `g-${name}`, name, rarity, faction, type, inherent: INHERENT[name] ?? "固有戦法" });
+const INHERENT: Record<string, string> = {"織田信長": "第六天魔王", "豊臣秀吉": "人たらし", "徳川家康": "堪忍", "武田信玄": "甲斐の虎", "上杉謙信": "毘沙門天", "黒田官兵衛": "謀聖", "ねね": "内助の功", "真田幸村": "六文銭", "伊達政宗": "独眼竜", "島津義弘": "捨て奸", "毛利元就": "謀神", "明智光秀": "桔梗の誓い", "本多忠勝": "蜻蛉切", "立花誾千代": "雷切", "竹中半兵衛": "十面埋伏", "前田利家": "槍の又左", "柴田勝家": "鬼柴田", "石田三成": "大一大万", "加藤清正": "虎退治", "福島正則": "賤ヶ岳の猛将", "井伊直政": "赤備え", "山県昌景": "武田の先鋒", "直江兼続": "愛の兜", "片倉景綱": "智の小十郎", "鈴木重秀": "雑賀撃ち", "今川義元": "海道一の弓取り", "北条氏康": "相模の獅子"};
 const t = (name: string, grade: "S" | "A", kind: string): Tactic => ({ id: `t-${name}`, name, grade, kind });
 
 export const GENERALS: General[] = [
@@ -31,7 +32,7 @@ export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
 
 export const MAX_SQUADS = 10;
 export const MAX_SAVED = 20;
-export type Squad = { generals: (string | null)[]; tactics: (string | null)[] }; // 武将3・戦法6（各武将2枠）
+export type Squad = { generals: (string | null)[]; tactics: (string | null)[] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
 export type Mode = "coexist" | "free";
 export type Formation = { mode: Mode; squads: Squad[] };
 export type SavedFormation = Formation & { id: string; name: string; createdAt: string };
