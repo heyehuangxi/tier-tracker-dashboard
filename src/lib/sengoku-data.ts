@@ -38,7 +38,7 @@ export type SavedFormation = Formation & { id: string; name: string; createdAt: 
 
 export const emptySquad = (): Squad => ({ generals: [null, null, null], tactics: [null, null, null, null, null, null] });
 
-export function encodeFormation(f: Formation & { name?: string }) {
+export function encodeFormation(f: Formation & { name?: string | undefined }) {
   const json = JSON.stringify(f);
   const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(json)));
   return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
