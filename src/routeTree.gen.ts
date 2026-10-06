@@ -10,33 +10,84 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CoexistRouteImport } from './routes/coexist'
+import { Route as FreeRouteImport } from './routes/free'
+import { Route as HoldingsRouteImport } from './routes/holdings'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as ShareRouteImport } from './routes/share'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoexistRoute = CoexistRouteImport.update({
+  id: '/coexist',
+  path: '/coexist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FreeRoute = FreeRouteImport.update({
+  id: '/free',
+  path: '/free',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HoldingsRoute = HoldingsRouteImport.update({
+  id: '/holdings',
+  path: '/holdings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/coexist': typeof CoexistRoute
+  '/free': typeof FreeRoute
+  '/holdings': typeof HoldingsRoute
+  '/saved': typeof SavedRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/coexist': typeof CoexistRoute
+  '/free': typeof FreeRoute
+  '/holdings': typeof HoldingsRoute
+  '/saved': typeof SavedRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/coexist': typeof CoexistRoute
+  '/free': typeof FreeRoute
+  '/holdings': typeof HoldingsRoute
+  '/saved': typeof SavedRoute
+  '/share': typeof ShareRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share'
+  id:
+    '__root__' | '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CoexistRoute: typeof CoexistRoute
+  FreeRoute: typeof FreeRoute
+  HoldingsRoute: typeof HoldingsRoute
+  SavedRoute: typeof SavedRoute
+  ShareRoute: typeof ShareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +99,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coexist': {
+      id: '/coexist'
+      path: '/coexist'
+      fullPath: '/coexist'
+      preLoaderRoute: typeof CoexistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/free': {
+      id: '/free'
+      path: '/free'
+      fullPath: '/free'
+      preLoaderRoute: typeof FreeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/holdings': {
+      id: '/holdings'
+      path: '/holdings'
+      fullPath: '/holdings'
+      preLoaderRoute: typeof HoldingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CoexistRoute: CoexistRoute,
+  FreeRoute: FreeRoute,
+  HoldingsRoute: HoldingsRoute,
+  SavedRoute: SavedRoute,
+  ShareRoute: ShareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

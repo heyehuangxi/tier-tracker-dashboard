@@ -102,3 +102,12 @@
   .metric-bar { height: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+.slot-select { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); color: var(--foreground); font-size: 12px; padding: 0 8px; cursor: pointer; }
+.slot-select:hover { border-color: var(--gold); }
+.slot-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.owned-card { text-align: left; border: 1px solid var(--border); border-radius: 6px; background: var(--card); padding: 8px 10px; transition: border-color 150ms, background 150ms, transform 150ms; cursor: pointer; }
+.owned-card:hover { border-color: var(--gold); transform: translateY(-1px); }
+.owned-card[data-on="true"] { background: var(--accent); border-color: var(--gold); }
+.owned-check { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 3px; display: grid; place-items: center; font-size: 10px; color: var(--primary-foreground); }
+.owned-card[data-on="true"] .owned-check { background: var(--gold); border-color: var(--gold); }
+.mode-badge { font-size: 9px; border-radius: 12px; background: var(--muted); color: var(--muted-foreground); padding: 2px 6px; }

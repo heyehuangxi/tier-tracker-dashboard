@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { BookmarkPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
-import { FormationCard } from "./saved";
+import { FormationCard } from "@/components/tier/formation-card";
 import { decodeFormation, MAX_SAVED, type SavedFormation } from "@/lib/sengoku-data";
 import { useLocal, readLocal, writeLocal, KEYS } from "@/lib/use-local";
 
