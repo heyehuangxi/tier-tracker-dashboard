@@ -37,8 +37,8 @@ export const emptySquad = (): Squad => ({ generals: [null, null, null], tactics:
 const clampRank = (n: unknown) => Math.max(0, Math.min(5, Math.floor(Number(n) || 0)));
 export function normSquad(q: Squad): Squad {
   const ranks = [0, 1, 2].map(i => clampRank(q?.ranks?.[i]));
-  const alloc = [0, 1, 2].map(i => { let left = pointsFor(ranks[i]); return [0, 1, 2, 3].map(k => { const v = Math.max(0, Math.min(left, Math.floor(Number(q?.alloc?.[i]?.[k]) || 0))); left -= v; return v; }); });
-  return { generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i] : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i] : null)), ranks, alloc };
+  const alloc = [0, 1, 2].map(i => { let left = pointsFor(ranks[i]!); return [0, 1, 2, 3].map(k => { const v = Math.max(0, Math.min(left, Math.floor(Number(q?.alloc?.[i]?.[k]) || 0))); left -= v; return v; }); });
+  return { generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i]! : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i]! : null)), ranks, alloc };
 }
 
 export function encodeFormation(f: Formation & { name?: string | undefined }) {
