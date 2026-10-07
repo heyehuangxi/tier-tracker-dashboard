@@ -1,22 +1,18 @@
-// デモ用のダミーデータ（実際のゲームデータではありません）
-export type General = { id: string; name: string; rarity: 5 | 4; faction: string; type: string; inherent: string };
+// 武将：提供マスターデータ（名将・良将）／戦法：デモ用ダミー
+import MASTER from "./generals-master.json";
+export type Stats = [number, number, number, number]; // 統率・武勇・知略・速度（Lv50）
+export type General = { id: string; name: string; rarity: 5 | 4; faction: string; cost: number; stats: Stats; main: string; r1: string; r3: string; r5: string; inherent: string };
 export type Tactic = { id: string; name: string; grade: "S" | "A"; kind: string };
-
-const g = (name: string, rarity: 5 | 4, faction: string, type: string): General => ({ id: `g-${name}`, name, rarity, faction, type, inherent: INHERENT[name] ?? "固有戦法" });
-const INHERENT: Record<string, string> = {"織田信長": "第六天魔王", "豊臣秀吉": "人たらし", "徳川家康": "堪忍", "武田信玄": "甲斐の虎", "上杉謙信": "毘沙門天", "黒田官兵衛": "謀聖", "ねね": "内助の功", "真田幸村": "六文銭", "伊達政宗": "独眼竜", "島津義弘": "捨て奸", "毛利元就": "謀神", "明智光秀": "桔梗の誓い", "本多忠勝": "蜻蛉切", "立花誾千代": "雷切", "竹中半兵衛": "十面埋伏", "前田利家": "槍の又左", "柴田勝家": "鬼柴田", "石田三成": "大一大万", "加藤清正": "虎退治", "福島正則": "賤ヶ岳の猛将", "井伊直政": "赤備え", "山県昌景": "武田の先鋒", "直江兼続": "愛の兜", "片倉景綱": "智の小十郎", "鈴木重秀": "雑賀撃ち", "今川義元": "海道一の弓取り", "北条氏康": "相模の獅子"};
 const t = (name: string, grade: "S" | "A", kind: string): Tactic => ({ id: `t-${name}`, name, grade, kind });
 
-export const GENERALS: General[] = [
-  g("織田信長", 5, "織田", "騎兵"), g("豊臣秀吉", 5, "豊臣", "足軽"), g("徳川家康", 5, "徳川", "弓兵"),
-  g("武田信玄", 5, "武田", "騎兵"), g("上杉謙信", 5, "上杉", "騎兵"), g("黒田官兵衛", 5, "豊臣", "弓兵"),
-  g("ねね", 5, "豊臣", "足軽"), g("真田幸村", 5, "真田", "騎兵"), g("伊達政宗", 5, "伊達", "鉄砲"),
-  g("島津義弘", 5, "島津", "足軽"), g("毛利元就", 5, "毛利", "弓兵"), g("明智光秀", 5, "織田", "鉄砲"),
-  g("本多忠勝", 5, "徳川", "騎兵"), g("立花誾千代", 5, "大友", "鉄砲"), g("竹中半兵衛", 5, "豊臣", "弓兵"),
-  g("前田利家", 4, "織田", "足軽"), g("柴田勝家", 4, "織田", "足軽"), g("石田三成", 4, "豊臣", "弓兵"),
-  g("加藤清正", 4, "豊臣", "足軽"), g("福島正則", 4, "豊臣", "騎兵"), g("井伊直政", 4, "徳川", "騎兵"),
-  g("山県昌景", 4, "武田", "騎兵"), g("直江兼続", 4, "上杉", "弓兵"), g("片倉景綱", 4, "伊達", "弓兵"),
-  g("鈴木重秀", 4, "雑賀", "鉄砲"), g("今川義元", 4, "今川", "足軽"), g("北条氏康", 4, "北条", "弓兵"),
-];
+export const FACTIONS = ["織田", "豊臣", "徳川", "武田", "上杉", "群雄"] as const;
+export const STAT_NAMES = ["統率", "武勇", "知略", "速度"] as const;
+export const LEVEL = 50;
+export const pointsFor = (rank: number) => 50 + rank * 10;
+export const unlockedSkills = (g: General, rank: number) => [[1, g.r1], [3, g.r3], [5, g.r5]].filter(([r, n]) => rank >= (r as number) && n && n !== "-") as [number, string][];
+
+type M = { f: string; n: string; r: 5 | 4; c: number; s: Stats; m: string; k1: string; k3: string; k5: string; i: string };
+export const GENERALS: General[] = (MASTER as M[]).map(x => ({ id: `g-${x.n}`, name: x.n, rarity: x.r, faction: x.f, cost: x.c, stats: x.s, main: x.m, r1: x.k1, r3: x.k3, r5: x.k5, inherent: x.i })).sort((a, b) => b.cost - a.cost);
 
 export const TACTICS: Tactic[] = [
   t("天下布武", "S", "指揮"), t("風林火山", "S", "能動"), t("車懸りの陣", "S", "陣法"), t("三本の矢", "S", "指揮"),
@@ -32,12 +28,18 @@ export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
 
 export const MAX_SQUADS = 10;
 export const MAX_SAVED = 20;
-export type Squad = { generals: (string | null)[]; tactics: (string | null)[] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
+export type Squad = { generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
 export type Mode = "coexist" | "free";
 export type Formation = { mode: Mode; squads: Squad[] };
 export type SavedFormation = Formation & { id: string; name: string; createdAt: string };
 
-export const emptySquad = (): Squad => ({ generals: [null, null, null], tactics: [null, null, null, null, null, null] });
+export const emptySquad = (): Squad => ({ generals: [null, null, null], tactics: [null, null, null, null, null, null], ranks: [0, 0, 0], alloc: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] });
+const clampRank = (n: unknown) => Math.max(0, Math.min(5, Math.floor(Number(n) || 0)));
+export function normSquad(q: Squad): Squad {
+  const ranks = [0, 1, 2].map(i => clampRank(q?.ranks?.[i]));
+  const alloc = [0, 1, 2].map(i => { let left = pointsFor(ranks[i]!); return [0, 1, 2, 3].map(k => { const v = Math.max(0, Math.min(left, Math.floor(Number(q?.alloc?.[i]?.[k]) || 0))); left -= v; return v; }); });
+  return { generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i]! : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i]! : null)), ranks, alloc };
+}
 
 export function encodeFormation(f: Formation & { name?: string | undefined }) {
   const json = JSON.stringify(f);
@@ -50,6 +52,6 @@ export function decodeFormation(s: string): (Formation & { name?: string }) | nu
     const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
     const f = JSON.parse(new TextDecoder().decode(bytes));
     if (!f || !Array.isArray(f.squads) || (f.mode !== "coexist" && f.mode !== "free")) return null;
-    return { mode: f.mode, name: typeof f.name === "string" ? f.name : undefined, squads: f.squads.slice(0, MAX_SQUADS).map((q: Squad) => ({ generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i] : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i] : null)) })) };
+    return { mode: f.mode, name: typeof f.name === "string" ? f.name : undefined, squads: f.squads.slice(0, MAX_SQUADS).map(normSquad) };
   } catch { return null; }
 }
