@@ -4,7 +4,8 @@ import { Save, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
-import { GENERALS, TACTICS, FACTIONS } from "@/lib/sengoku-data";
+import { FactionTabs } from "@/components/tier/faction-tabs";
+import { GENERALS, TACTICS } from "@/lib/sengoku-data";
 import { useLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/holdings")({
@@ -64,8 +65,3 @@ function Holdings() {
   </>;
 }
 
-export function FactionTabs({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <div className="flex flex-wrap gap-1 rounded-md bg-muted p-1" role="tablist" aria-label="勢力">
-    {["all", ...FACTIONS].map(f => <Button key={f} role="tab" aria-selected={value === f} size="sm" variant="ghost" className={`h-7 text-[11px] ${value === f ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => onChange(f)}>{f === "all" ? "すべて" : f}</Button>)}
-  </div>;
-}
