@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Minus, Plus as PlusI, Save, Share2, Trash2, Copy, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GENERALS, TACTICS, MAX_SQUADS, MAX_SAVED, emptySquad, normSquad, encodeFormation, FACTIONS, STAT_NAMES, LEVEL, pointsFor, unlockedSkills, generalById, tacticById, type Mode, type Squad, type SavedFormation } from "@/lib/sengoku-data";
+import { GENERALS, TACTICS, MAX_SQUADS, MAX_SAVED, emptySquad, normSquad, encodeFormation, FACTIONS, STAT_NAMES, LEVEL, pointsFor, unlockedSkills, generalById, tacticById, TACTIC_KINDS, tacticTip, type Mode, type Squad, type SavedFormation } from "@/lib/sengoku-data";
 import { useLocal, KEYS } from "@/lib/use-local";
 import { useNotice } from "./app-shell";
 import { FactionTabs } from "./faction-tabs";
@@ -13,6 +13,9 @@ export function FormationEditor({ mode }: { mode: Mode }) {
   const [rawSquads, setSquads, ready] = useLocal<Squad[]>(KEYS.draft(mode), [emptySquad()]);
   const squads = useMemo(() => rawSquads.map(normSquad), [rawSquads]);
   const [fac, setFac] = useState("all");
+  const [tg, setTg] = useState("all");
+  const [tk, setTk] = useState("all");
+  const [tsort, setTsort] = useState("grade");
   const [ownedG] = useLocal<string[]>(KEYS.ownedGenerals, []);
   const [ownedT] = useLocal<string[]>(KEYS.ownedTactics, []);
   const [saved, setSaved] = useLocal<SavedFormation[]>(KEYS.saved, []);
@@ -21,7 +24,8 @@ export function FormationEditor({ mode }: { mode: Mode }) {
   const coexist = mode === "coexist";
 
   const poolG = coexist ? GENERALS.filter(x => ownedG.includes(x.id)) : GENERALS;
-  const poolT = coexist ? TACTICS.filter(x => ownedT.includes(x.id)) : TACTICS;
+  const poolT = (coexist ? TACTICS.filter(x => ownedT.includes(x.id)) : TACTICS).filter(x => (tg === "all" || x.grade === tg) && (tk === "all" || x.kind === tk));
+  const sortedT = tsort === "kind" ? [...poolT].sort((a, b) => a.kind.localeCompare(b.kind, "ja") || a.grade.localeCompare(b.grade)) : tsort === "name" ? [...poolT].sort((a, b) => a.name.localeCompare(b.name, "ja")) : poolT;
 
   // 共存編成：全部隊で使用中の武将・戦法（どの部隊のどの枠か）
   const usedG = useMemo(() => { const m = new Map<string, number>(); squads.forEach((s, i) => s.generals.forEach(id => id && m.set(id, i))); return m; }, [squads]);
@@ -54,7 +58,7 @@ export function FormationEditor({ mode }: { mode: Mode }) {
         <Button variant="ghost" size="icon" aria-label="編成をリセット" title="編成をリセット" onClick={() => { setSquads([emptySquad()]); notify("編成をリセットしました。"); }}><RotateCcw /></Button>
       </div>
     </section>
-    <section className="panel flex flex-wrap items-center gap-3 px-4 py-3"><span className="text-[11px] text-muted-foreground">勢力で絞り込み（コスト高い順）</span><FactionTabs value={fac} onChange={setFac} /></section>
+    <section className="panel flex flex-wrap items-center gap-3 px-4 py-3"><span className="text-[11px] text-muted-foreground">勢力で絞り込み（コスト高い順）</span><FactionTabs value={fac} onChange={setFac} /><span className="ml-auto text-[11px] text-muted-foreground">伝授戦法</span><select className="slot-select h-8 w-24" value={tg} onChange={e => setTg(e.target.value)} aria-label="戦法ランク"><option value="all">全ランク</option><option value="S">S戦法</option><option value="A">A戦法</option></select><select className="slot-select h-8 w-24" value={tk} onChange={e => setTk(e.target.value)} aria-label="戦法種別"><option value="all">全種別</option>{TACTIC_KINDS.map(k => <option key={k} value={k}>{k}</option>)}</select><select className="slot-select h-8 w-24" value={tsort} onChange={e => setTsort(e.target.value)} aria-label="並び替え"><option value="grade">ランク順</option><option value="kind">種別順</option><option value="name">名前順</option></select></section>
     {shareUrl && <section className="panel flex items-center gap-2 px-4 py-3"><Input readOnly value={shareUrl} className="h-8 flex-1 text-[11px]" onFocus={e => e.currentTarget.select()} /><Button size="sm" variant="ghost" onClick={() => { navigator.clipboard?.writeText(shareUrl); notify("コピーしました。"); }}><Copy />コピー</Button></section>}
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
       {squads.map((s, i) => <section key={i} className="panel px-4 py-4" aria-label={`部隊${i + 1}`}>
@@ -73,10 +77,10 @@ export function FormationEditor({ mode }: { mode: Mode }) {
               <div className="text-[10px] tabular-nums">属性ポイント 残り <span className={left ? "font-semibold text-primary" : ""}>{left}</span>/{total}</div>
               {STAT_NAMES.map((nm, k) => <div key={nm} className="flex items-center gap-1 text-[10px] tabular-nums"><span className="w-8 shrink-0 whitespace-nowrap text-muted-foreground">{nm}</span><span className="whitespace-nowrap">{gn.stats[k]! + al[k]!}{al[k]! > 0 && <span className="text-primary">(+{al[k]})</span>}</span><button type="button" className="grid size-5 place-items-center rounded border border-border disabled:opacity-30" aria-label={`${nm}を減らす`} disabled={!al[k]} onClick={() => setAl(k, al[k]! - 1)}><Minus className="size-3" /></button><span className="flex-1" /><button type="button" className="grid size-5 place-items-center rounded border border-border disabled:opacity-30" aria-label={`${nm}を増やす`} disabled={!left} onClick={() => setAl(k, al[k]! + 1)}><PlusI className="size-3" /></button></div>)}
             </div>; })()}
-            {[0, 1].map(k => { const ti = slot * 2 + k; return <select key={k} className="slot-select mt-1.5" value={s.tactics[ti] ?? ""} onChange={e => update(i, x => { x.tactics[ti] = e.target.value || null; return x; })} aria-label={`部隊${i + 1} ${slot === 0 ? "大将" : `副将${slot}`} 伝授戦法${k + 1}`}>
+            {[0, 1].map(k => { const ti = slot * 2 + k; const cur = s.tactics[ti] ? tacticById.get(s.tactics[ti]!) : undefined; return <div key={k}><select title={cur ? tacticTip(cur) : undefined} className="slot-select mt-1.5" value={s.tactics[ti] ?? ""} onChange={e => update(i, x => { x.tactics[ti] = e.target.value || null; return x; })} aria-label={`部隊${i + 1} ${slot === 0 ? "大将" : `副将${slot}`} 伝授戦法${k + 1}`}>
               <option value="">— 伝授戦法{k + 1} —</option>
-              {poolT.map(tc => { const other = usedT.get(tc.id); const disabled = (s.tactics.includes(tc.id) && s.tactics[ti] !== tc.id) || (coexist && other !== undefined && other !== i); return <option key={tc.id} value={tc.id} disabled={disabled}>[{tc.grade}] {tc.name}{coexist && other !== undefined && other !== i ? `（部隊${other + 1}）` : ""}</option>; })}
-            </select>; })}
+              {cur && !sortedT.includes(cur) && <option value={cur.id}>[{cur.grade}] {cur.name}</option>}{sortedT.map(tc => { const other = usedT.get(tc.id); const disabled = (s.tactics.includes(tc.id) && s.tactics[ti] !== tc.id) || (coexist && other !== undefined && other !== i); return <option key={tc.id} value={tc.id} disabled={disabled} title={tacticTip(tc)}>[{tc.grade}・{tc.kind}] {tc.name}{coexist && other !== undefined && other !== i ? `（部隊${other + 1}）` : ""}</option>; })}
+            </select>{cur && <details className="mt-1 rounded border border-muted bg-card px-2 py-1 text-[10px] leading-4"><summary className="cursor-pointer text-muted-foreground">{cur.kind}・発動{cur.rate}・{cur.troop}</summary><p className="mt-1">{cur.effect}</p></details>}</div>; })}
           </div>)}
         </div>
       </section>)}
