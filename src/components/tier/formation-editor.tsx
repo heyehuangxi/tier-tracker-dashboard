@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Minus, Plus as PlusI, Save, Share2, Trash2, Copy, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GENERALS, TACTICS, MAX_SQUADS, MAX_SAVED, emptySquad, normSquad, encodeFormation, FACTIONS, STAT_NAMES, LEVEL, pointsFor, unlockedSkills, generalById, tacticById, TACTIC_KINDS, tacticTip, MAX_COST, effectiveFaction, squadCost, hasFactionBonus, buffed, type Mode, type Squad, type SavedFormation } from "@/lib/sengoku-data";
+import { GENERALS, TACTICS, MAX_SQUADS, MAX_SAVED, emptySquad, normSquad, encodeFormation, FACTIONS, STAT_NAMES, LEVEL, pointsFor, unlockedSkills, generalById, tacticById, tacticTip, MAX_COST, effectiveFaction, squadCost, hasFactionBonus, buffed, type Mode, type Squad, type SavedFormation } from "@/lib/sengoku-data";
 import { useLocal, KEYS } from "@/lib/use-local";
 import { useNotice } from "./app-shell";
 import { FactionTabs } from "./faction-tabs";
