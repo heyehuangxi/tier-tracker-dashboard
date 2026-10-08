@@ -13,9 +13,6 @@ export function FormationEditor({ mode }: { mode: Mode }) {
   const [rawSquads, setSquads, ready] = useLocal<Squad[]>(KEYS.draft(mode), [emptySquad()]);
   const squads = useMemo(() => rawSquads.map(normSquad), [rawSquads]);
   const [fac, setFac] = useState("all");
-  const [tg, setTg] = useState("all");
-  const [tk, setTk] = useState("all");
-  const [tsort, setTsort] = useState("grade");
   const [ownedG] = useLocal<string[]>(KEYS.ownedGenerals, []);
   const [ownedT] = useLocal<string[]>(KEYS.ownedTactics, []);
   const [saved, setSaved] = useLocal<SavedFormation[]>(KEYS.saved, []);
