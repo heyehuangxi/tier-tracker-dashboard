@@ -51,3 +51,21 @@ export function decodeFormation(s: string): (Formation & { name?: string }) | nu
     return { mode: f.mode, name: typeof f.name === "string" ? f.name : undefined, squads: f.squads.slice(0, MAX_SQUADS).map(normSquad) };
   } catch { return null; }
 }
+
+// 部隊ルール
+export const MAX_COST = 20;
+export const FACTION_BONUS = 0.07;
+export const SANADA_ID = "g-真田昌幸";
+/** 真田昌幸は副将時に大将の勢力へ変化。大将時は本来の勢力のまま。 */
+export function effectiveFaction(gens: (string | null)[], slot: number): string | undefined {
+  const id = gens[slot]; const g = id ? generalById.get(id) : undefined; if (!g) return undefined;
+  if (g.id === SANADA_ID && slot > 0) { const lead = gens[0] ? generalById.get(gens[0]) : undefined; if (lead) return lead.faction; }
+  return g.faction;
+}
+export const squadCost = (gens: (string | null)[]) => gens.reduce((a, id) => a + (id ? generalById.get(id)?.cost ?? 0 : 0), 0);
+export function hasFactionBonus(gens: (string | null)[]) {
+  if (gens.some(x => !x)) return false;
+  const f = [0, 1, 2].map(i => effectiveFaction(gens, i));
+  return f.every(x => x && x === f[0]);
+}
+export const buffed = (v: number, on: boolean) => (on ? Math.round(v * (1 + FACTION_BONUS)) : v);

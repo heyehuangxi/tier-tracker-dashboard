@@ -15,6 +15,7 @@ import { Route as FreeRouteImport } from './routes/free'
 import { Route as HoldingsRouteImport } from './routes/holdings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ShareRouteImport } from './routes/share'
+import { Route as TacticsRouteImport } from './routes/tactics'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const ShareRoute = ShareRouteImport.update({
   path: '/share',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TacticsRoute = TacticsRouteImport.update({
+  id: '/tactics',
+  path: '/tactics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
+  '/tactics': typeof TacticsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
+  '/tactics': typeof TacticsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,14 +79,24 @@ export interface FileRoutesById {
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
+  '/tactics': typeof TacticsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share'
+  fullPaths:
+    '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share' | '/tactics'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share'
+  to:
+    '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share' | '/tactics'
   id:
-    '__root__' | '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share'
+    | '__root__'
+    | '/'
+    | '/coexist'
+    | '/free'
+    | '/holdings'
+    | '/saved'
+    | '/share'
+    | '/tactics'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -88,6 +106,7 @@ export interface RootRouteChildren {
   HoldingsRoute: typeof HoldingsRoute
   SavedRoute: typeof SavedRoute
   ShareRoute: typeof ShareRoute
+  TacticsRoute: typeof TacticsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tactics': {
+      id: '/tactics'
+      path: '/tactics'
+      fullPath: '/tactics'
+      preLoaderRoute: typeof TacticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -144,6 +170,7 @@ const rootRouteChildren: RootRouteChildren = {
   HoldingsRoute: HoldingsRoute,
   SavedRoute: SavedRoute,
   ShareRoute: ShareRoute,
+  TacticsRoute: TacticsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
