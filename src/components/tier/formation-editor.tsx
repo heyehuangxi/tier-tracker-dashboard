@@ -21,8 +21,7 @@ export function FormationEditor({ mode }: { mode: Mode }) {
   const coexist = mode === "coexist";
 
   const poolG = coexist ? GENERALS.filter(x => ownedG.includes(x.id)) : GENERALS;
-  const poolT = (coexist ? TACTICS.filter(x => ownedT.includes(x.id)) : TACTICS).filter(x => (tg === "all" || x.grade === tg) && (tk === "all" || x.kind === tk));
-  const sortedT = tsort === "kind" ? [...poolT].sort((a, b) => a.kind.localeCompare(b.kind, "ja") || a.grade.localeCompare(b.grade)) : tsort === "name" ? [...poolT].sort((a, b) => a.name.localeCompare(b.name, "ja")) : poolT;
+  const poolT = coexist ? TACTICS.filter(x => ownedT.includes(x.id)) : TACTICS;
 
   // 共存編成：全部隊で使用中の武将・戦法（どの部隊のどの枠か）
   const usedG = useMemo(() => { const m = new Map<string, number>(); squads.forEach((s, i) => s.generals.forEach(id => id && m.set(id, i))); return m; }, [squads]);
