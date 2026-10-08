@@ -3,11 +3,11 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Grid3X3, UserRound, Flag, Share2, Crosshair, BookOpen, ChartNoAxesCombined, PanelLeftClose, PanelLeftOpen, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type Item = { label: string; icon: typeof Grid3X3; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" };
+type Item = { label: string; icon: typeof Grid3X3; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" | "/tactics" };
 const groups: { name: string; items: Item[] }[] = [
   { name: "主要機能", items: [{ label: "共存編成", icon: Grid3X3, badge: "作業台", to: "/coexist" }, { label: "自由編成", icon: Grid3X3, to: "/free" }, { label: "所持管理", icon: UserRound, to: "/holdings" }, { label: "保存した編成", icon: Flag, to: "/saved" }, { label: "共有", icon: Share2, to: "/share" }] },
   { name: "シミュレーター機能", items: [{ label: "Tier測定", icon: Crosshair, badge: "NEW", to: "/" }, { label: "Tier測定light", icon: Crosshair, badge: "NEW" }, { label: "模擬対戦", icon: Crosshair, badge: "NEW" }, { label: "AI編成", icon: Crosshair, badge: "NEW" }] },
-  { name: "データベース", items: [{ label: "武将データベース", icon: BookOpen }, { label: "属性値ランキング", icon: ChartNoAxesCombined }, { label: "特性一覧", icon: BookOpen }, { label: "戦法一覧", icon: BookOpen }] },
+  { name: "データベース", items: [{ label: "武将データベース", icon: BookOpen }, { label: "属性値ランキング", icon: ChartNoAxesCombined }, { label: "特性一覧", icon: BookOpen }, { label: "戦法一覧", icon: BookOpen, to: "/tactics" }] },
 ];
 export function Navigation({ collapsed, mobileOpen, onCollapse, onClose, onSelect }: { collapsed: boolean; mobileOpen: boolean; onCollapse: () => void; onClose: () => void; onSelect: (label: string) => void }) {
   const [closed, setClosed] = useState<string[]>([]);
