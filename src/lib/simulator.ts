@@ -36,7 +36,7 @@ export function autoAlloc(alloc: string[], rank: number): number[] {
   const idx = alloc.map(a => STAT_NAMES.indexOf(a as never)).filter(i => i >= 0);
   const out = [0, 0, 0, 0]; if (!idx.length) return out;
   const total = pointsFor(rank); const each = Math.floor(total / idx.length);
-  idx.forEach((i, k) => { out[i] += each + (k === 0 ? total - each * idx.length : 0); });
+  idx.forEach((i, k) => { out[i] = (out[i] ?? 0) + each + (k === 0 ? total - each * idx.length : 0); });
   return out;
 }
 
