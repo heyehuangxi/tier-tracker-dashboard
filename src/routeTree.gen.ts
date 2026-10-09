@@ -16,6 +16,7 @@ import { Route as HoldingsRouteImport } from './routes/holdings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as TacticsRouteImport } from './routes/tactics'
+import { Route as TierLightRouteImport } from './routes/tier-light'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const TacticsRoute = TacticsRouteImport.update({
   path: '/tactics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TierLightRoute = TierLightRouteImport.update({
+  id: '/tier-light',
+  path: '/tier-light',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
+  '/tier-light': typeof TierLightRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
+  '/tier-light': typeof TierLightRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,14 +88,29 @@ export interface FileRoutesById {
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
+  '/tier-light': typeof TierLightRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share' | '/tactics'
+    | '/'
+    | '/coexist'
+    | '/free'
+    | '/holdings'
+    | '/saved'
+    | '/share'
+    | '/tactics'
+    | '/tier-light'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/coexist' | '/free' | '/holdings' | '/saved' | '/share' | '/tactics'
+    | '/'
+    | '/coexist'
+    | '/free'
+    | '/holdings'
+    | '/saved'
+    | '/share'
+    | '/tactics'
+    | '/tier-light'
   id:
     | '__root__'
     | '/'
@@ -97,6 +120,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/share'
     | '/tactics'
+    | '/tier-light'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -107,6 +131,7 @@ export interface RootRouteChildren {
   SavedRoute: typeof SavedRoute
   ShareRoute: typeof ShareRoute
   TacticsRoute: typeof TacticsRoute
+  TierLightRoute: typeof TierLightRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -160,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TacticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tier-light': {
+      id: '/tier-light'
+      path: '/tier-light'
+      fullPath: '/tier-light'
+      preLoaderRoute: typeof TierLightRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -171,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   SavedRoute: SavedRoute,
   ShareRoute: ShareRoute,
   TacticsRoute: TacticsRoute,
+  TierLightRoute: TierLightRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
