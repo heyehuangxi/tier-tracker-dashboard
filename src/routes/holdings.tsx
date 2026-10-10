@@ -10,10 +10,12 @@ import { useLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/holdings")({
   head: () => ({ meta: [
-    { title: "所持管理 | 真戦研究所" },
+    { title: "所持管理 | ぴえんで候" },
     { name: "description", content: "所持している武将と戦法を登録し、共存編成で利用します。" },
-    { property: "og:title", content: "所持管理 | 真戦研究所" },
+    { property: "og:title", content: "所持管理 | ぴえんで候" },
     { property: "og:description", content: "所持武将・戦法をまとめて管理。" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
   ] }),
   component: () => <AppShell title="所持管理" description="所持している武将・戦法を選び、保存してください。"><Holdings /></AppShell>,
 });
