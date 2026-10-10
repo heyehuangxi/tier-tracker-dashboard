@@ -14,8 +14,8 @@ export function Navigation({ collapsed, mobileOpen, onCollapse, onClose, onSelec
   const pathname = useRouterState({ select: s => s.location.pathname });
   return <aside className={`app-sidebar fixed inset-y-0 left-0 z-40 flex flex-col ${collapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`} aria-label="サイドナビゲーション">
     <div className="flex h-[82px] shrink-0 items-center gap-3 px-4">
-      <div className="brand-mark shrink-0" aria-hidden="true">真</div>
-      {!collapsed && <div className="min-w-0"><div className="font-display text-[17px] font-bold whitespace-nowrap">真戦研究所</div><div className="mt-0.5 text-[10px] text-muted-foreground">SRI - v1.0</div></div>}
+      <div className="brand-mark shrink-0" aria-hidden="true">ぴ</div>
+      {!collapsed && <div className="min-w-0"><div className="font-display text-[17px] font-bold whitespace-nowrap">ぴえんで候</div><div className="mt-0.5 text-[10px] text-muted-foreground">SENGOKU LAB / v1.0</div></div>}
       <Button variant="ghost" size="icon" className="ml-auto md:hidden shrink-0" onClick={onClose} aria-label="メニューを閉じる"><X /></Button>
     </div>
     <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-5">

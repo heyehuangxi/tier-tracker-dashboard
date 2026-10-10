@@ -7,10 +7,12 @@ import { useLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/saved")({
   head: () => ({ meta: [
-    { title: "保存した編成 | 真戦研究所" },
+    { title: "保存した編成 | ぴえんで候" },
     { name: "description", content: "共存編成・自由編成で保存した部隊構成を一覧・読込・削除できます。" },
-    { property: "og:title", content: "保存した編成 | 真戦研究所" },
+    { property: "og:title", content: "保存した編成 | ぴえんで候" },
     { property: "og:description", content: "保存した部隊構成を最大20件まで管理。" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
   ] }),
   component: () => <AppShell title="保存した編成" description={`最大${MAX_SAVED}件まで保存できます。`}><Saved /></AppShell>,
 });

@@ -9,8 +9,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        simulation: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm shadow-none",
-        import: "border border-primary/35 bg-primary/5 text-primary hover:bg-primary/10 shadow-none rounded-sm",
+        simulation: "button-simulation text-primary-foreground rounded-md",
+        import: "border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 shadow-none rounded-md",
         account: "border border-user-foreground/15 bg-user text-user-foreground hover:bg-user/80 shadow-none rounded-sm",
         default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
