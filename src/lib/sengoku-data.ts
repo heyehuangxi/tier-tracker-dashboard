@@ -24,17 +24,26 @@ export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
 
 export const MAX_SQUADS = 10;
 export const MAX_SAVED = 20;
-export type Squad = { generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
+export const TROOP_TYPES = ["騎兵", "弓兵", "鉄砲", "足軽"] as const;
+export type TroopType = typeof TROOP_TYPES[number];
+export const normalizeTroop = (value: unknown): TroopType => TROOP_TYPES.find(troop => troop === value) ?? "足軽";
+export const TROOP_ADVANTAGE: Record<TroopType, TroopType> = { 騎兵: "弓兵", 弓兵: "鉄砲", 鉄砲: "足軽", 足軽: "騎兵" };
+// 簡易モデルの相性補正：有利+15%、不利-15%、同種・対角は補正なし。
+export function troopDamageMultiplier(attacker: unknown, defender: unknown): number {
+  const a = normalizeTroop(attacker), b = normalizeTroop(defender);
+  return TROOP_ADVANTAGE[a] === b ? 1.15 : TROOP_ADVANTAGE[b] === a ? 0.85 : 1;
+}
+export type Squad = { troop?: TroopType; generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
 export type Mode = "coexist" | "free";
 export type Formation = { mode: Mode; squads: Squad[] };
 export type SavedFormation = Formation & { id: string; name: string; createdAt: string };
 
-export const emptySquad = (): Squad => ({ generals: [null, null, null], tactics: [null, null, null, null, null, null], ranks: [0, 0, 0], alloc: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] });
+export const emptySquad = (): Squad => ({ troop: "足軽", generals: [null, null, null], tactics: [null, null, null, null, null, null], ranks: [0, 0, 0], alloc: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] });
 const clampRank = (n: unknown) => Math.max(0, Math.min(5, Math.floor(Number(n) || 0)));
 export function normSquad(q: Squad): Squad {
   const ranks = [0, 1, 2].map(i => clampRank(q?.ranks?.[i]));
   const alloc = [0, 1, 2].map(i => { let left = pointsFor(ranks[i]!); return [0, 1, 2, 3].map(k => { const v = Math.max(0, Math.min(left, Math.floor(Number(q?.alloc?.[i]?.[k]) || 0))); left -= v; return v; }); });
-  return { generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i]! : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i]! : null)), ranks, alloc };
+  return { troop: normalizeTroop(q?.troop), generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i] ?? null : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i] ?? null : null)), ranks, alloc };
 }
 
 export function encodeFormation(f: Formation & { name?: string | undefined }) {
