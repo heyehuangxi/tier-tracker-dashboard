@@ -15,7 +15,7 @@ export function AppShell({ title, description, children }: { title: string; desc
     {mobileOpen && <div className="fixed inset-0 z-30 bg-foreground/25 md:hidden" onClick={() => setMobileOpen(false)} />}
     <Navigation collapsed={collapsed} mobileOpen={mobileOpen} onCollapse={() => { setCollapsed(v => !v); setMobileOpen(false); }} onClose={() => setMobileOpen(false)} onSelect={label => setNotice(`${label}は準備中です。`)} />
     <main className={`app-main min-h-screen ${collapsed ? "collapsed" : ""}`}>
-      <header className="flex h-[64px] items-center gap-3 border-b border-muted bg-card px-4 sm:px-7">
+      <header className="flex h-[64px] items-center gap-3 border-b border-muted bg-card/70 backdrop-blur-xl px-4 sm:px-7">
         <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={() => setMobileOpen(true)} aria-label="メニューを開く"><Menu /></Button>
         <h1 className="page-title flex shrink-0 items-center gap-3 font-display text-xl font-bold">{title}</h1>
         {description && <span className="ml-1 hidden min-w-0 truncate border-l border-muted pl-4 text-[11px] text-muted-foreground/70 lg:block">{description}</span>}
