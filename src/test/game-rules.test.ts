@@ -7,8 +7,8 @@ describe("Troops, search and tactics", () => {
   it("applies all four directional troop advantages and neutral pairings", () => {
     for (const troop of TROOP_TYPES) {
       const weaker = TROOP_ADVANTAGE[troop];
-      expect(troopDamageMultiplier(troop, weaker)).toBe(1.15);
-      expect(troopDamageMultiplier(weaker, troop)).toBe(0.85);
+      expect(troopDamageMultiplier(troop, weaker)).toBe(1.125);
+      expect(troopDamageMultiplier(weaker, troop)).toBe(0.875);
       expect(troopDamageMultiplier(troop, troop)).toBe(1);
     }
     expect(troopDamageMultiplier("騎兵", "鉄砲")).toBe(1);

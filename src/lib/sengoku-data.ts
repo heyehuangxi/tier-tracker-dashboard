@@ -31,7 +31,7 @@ export const TROOP_ADVANTAGE: Record<TroopType, TroopType> = { 騎兵: "弓兵",
 // 簡易モデルの相性補正：有利+15%、不利-15%、同種・対角は補正なし。
 export function troopDamageMultiplier(attacker: unknown, defender: unknown): number {
   const a = normalizeTroop(attacker), b = normalizeTroop(defender);
-  return TROOP_ADVANTAGE[a] === b ? 1.15 : TROOP_ADVANTAGE[b] === a ? 0.85 : 1;
+  return TROOP_ADVANTAGE[a] === b ? 1.125 : TROOP_ADVANTAGE[b] === a ? 0.875 : 1;
 }
 export type Squad = { troop?: TroopType; generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
 export type Mode = "coexist" | "free";
