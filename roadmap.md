@@ -1,6 +1,6 @@
 # Tasks
-- [ ] Dark redesign and rebrand across pages
-- [ ] Troop selection, persistence and matchup simulation
-- [ ] Partial-name search in general/tactic selectors
-- [ ] Simplify Tier results and remove お初 template
-- [ ] Add 荷駄崩し and validate full flows
+- [x] Dark redesign and rebrand across pages
+- [x] Troop selection, persistence and matchup simulation
+- [x] Partial-name search in general/tactic selectors
+- [x] Simplify Tier results and remove お初 template
+- [x] Add 荷駄崩し and validate full flows
