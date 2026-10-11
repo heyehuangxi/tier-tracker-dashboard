@@ -18,5 +18,5 @@
 - Preserve existing browser storage keys across rebrands so holdings and formations remain available.
 - Normalize squad troop types centrally, defaulting legacy squads to 足軽; use the same field for editor, previews, shares and simulation to preserve round trips.
 - Use the shared SearchSelect for general and tactic pickers so partial-name search and disabled-option restrictions stay consistent.
-- Troop matchup multipliers in the demonstrative simulator are +15% for advantageous attacks and -15% for disadvantaged attacks; keep this assumption centralized until official values are provided.
+- Troop matchup multipliers in the demonstrative simulator are ×1.125 for advantageous and ×0.875 for disadvantaged attacks; keep this assumption centralized until official values are provided.
 - 荷駄崩し is simulated separately at maximum tactic level (128% damage and 50% recovery reduction), avoiding the generic recovery heuristic for its debuff text.
