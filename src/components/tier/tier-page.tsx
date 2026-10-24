@@ -43,7 +43,17 @@ function TierBody({ perMatch }: { perMatch: number }) {
       setResult(r); setRunning(false); notice(`${r.total.toLocaleString("en-US")}戦のシミュレーションが完了しました`);
     }, 30);
   }
-  const setRank = (ti: number, gi: number, r: number) => { const next = TEMPLATES.map((_, i) => [...(ranks[i] ?? [0, 0, 0])]); const row = next[ti]; if (row) row[gi] = r; setRanks(next); setResult(null); };
+  const setRank = (ti: number, gi: number, r: number) => { const next = TEMPLATES.map((_, i) => [...(ranks[i] ?? [0, 0, 0])]); const row = next[ti]; if (row) row[gi] = r; setRanks(next); setResult(null); setReportSel(null); };
+  // 一括設定: 自軍＝テスト対象のテンプレート、敵＝それ以外のテンプレート全て（保存した編成は編成側の凸数が使われる）
+  const testTplIndex = test.key.startsWith("t-") ? Number(test.key.slice(2)) : -1;
+  const setBulkRanks = (side: "self" | "enemy", r: number) => {
+    const next = TEMPLATES.map((_, i) => [...(ranks[i] ?? [0, 0, 0])]);
+    next.forEach((row, i) => { const isSelf = i === testTplIndex; if ((side === "self" && isSelf) || (side === "enemy" && !isSelf)) { row[0] = r; row[1] = r; row[2] = r; } });
+    setRanks(next); setResult(null); setReportSel(null);
+  };
+  const uniformRank = (rows: number[][]) => (rows.length && rows.every(row => row.every(v => v === rows[0]?.[0])) ? rows[0]?.[0] : undefined);
+  const selfUniform = testTplIndex >= 0 ? uniformRank([ranks[testTplIndex] ?? [0, 0, 0]]) : undefined;
+  const enemyUniform = uniformRank(TEMPLATES.map((_, i) => ranks[i] ?? [0, 0, 0]).filter((_, i) => i !== testTplIndex));
   const pct = result ? result.counts.map(c => (c / Math.max(1, result.total)) * 100) : [0, 0, 0, 0, 0];
 
   return <>
@@ -57,6 +67,23 @@ function TierBody({ perMatch }: { perMatch: number }) {
         <p className="text-[11px] text-muted-foreground">対戦相手: {opponents.length}部隊 × {perMatch}回 = {(opponents.length * perMatch).toLocaleString("en-US")}戦（最大8ターン）</p>
       </div>
       <Button variant="simulation" className="w-full text-xs sm:w-auto" disabled={running} onClick={simulate}><CirclePlay className={running ? "animate-spin" : ""} />{running ? "シミュレーション実行中…" : `各${perMatch}回シミュレーション`}</Button>
+    </section>
+
+    <section className="panel px-5 py-4" aria-labelledby="bulk-rank-title">
+      <h2 id="bulk-rank-title" className="text-sm font-semibold">凸数の一括設定</h2>
+      <p className="mt-1 text-[11px] text-muted-foreground">ボタンを押すと即反映されます。部隊ごとの微調整は下の「対戦テンプレート・凸数設定」から今まで通りできます。</p>
+      <div className="mt-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="w-36 shrink-0 font-semibold text-primary">自軍（テスト対象）</span>
+          {testTplIndex >= 0 ? TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={selfUniform === x ? "default" : "outline"} className="h-7 px-3 text-[11px]" onClick={() => setBulkRanks("self", x)} aria-label={`自軍の凸数を全員${x}凸に一括設定`}>全員{x}凸</Button>)
+            : <span className="text-muted-foreground">保存した編成が対象のため、編成側の凸数が使われます</span>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="w-36 shrink-0 font-semibold text-loss">敵（テンプレート{TEMPLATES.length - Math.max(0, testTplIndex >= 0 ? 1 : 0)}部隊）</span>
+          {TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={enemyUniform === x ? "default" : "outline"} className="h-7 px-3 text-[11px]" onClick={() => setBulkRanks("enemy", x)} aria-label={`敵テンプレートの凸数を全員${x}凸に一括設定`}>全員{x}凸</Button>)}
+          <span className="text-muted-foreground">保存した編成の相手は編成側の凸数が使われます</span>
+        </div>
+      </div>
     </section>
 
     <section className="panel flex flex-wrap items-center justify-between gap-4 px-5 py-6 sm:px-6" aria-labelledby="win-rate-title" aria-busy={running}>
