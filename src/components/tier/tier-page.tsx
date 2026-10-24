@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
 import { useLocal, KEYS } from "@/lib/use-local";
 import { generalById, normSquad, normalizeTroop, type SavedFormation, type Squad } from "@/lib/sengoku-data";
-import { TEMPLATES, TEMPLATE_RANKS, templateToSquad, runSimulation, type SimResult } from "@/lib/simulator";
+import { TEMPLATES, TEMPLATE_RANKS, templateToSquad, runSimulation, type BattleReport, type SimResult } from "@/lib/simulator";
+import { BattleReportModal } from "@/components/tier/battle-report";
 
 const OUTCOMES = [
   { label: "勝ち", color: "text-win", swatch: "bg-win" }, { label: "優勢", color: "text-advantage", swatch: "bg-advantage" },
@@ -24,6 +25,7 @@ function TierBody({ perMatch }: { perMatch: number }) {
   const [testKey, setTestKey] = useState("t-0");
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<SimResult | null>(null);
+  const [reportSel, setReportSel] = useState<{ label: string; report: BattleReport } | null>(null);
   const [openTpl, setOpenTpl] = useState(false);
 
   const tplSquads = useMemo(() => TEMPLATES.map((t, i) => ({ key: `t-${i}`, label: `テンプレ${i + 1} ${t.label}`, squad: templateToSquad(t, ranks[i] ?? [0, 0, 0]) })), [ranks]);
@@ -66,7 +68,7 @@ function TierBody({ perMatch }: { perMatch: number }) {
       <div className="mb-4 flex items-center justify-between"><h2 id="results-title" className="text-base font-semibold">対戦結果</h2><span className="text-[11px] text-muted-foreground tabular-nums">{(result?.total ?? 0).toLocaleString("en-US")}戦</span></div>
       <svg className="result-bar" viewBox="0 0 100 24" preserveAspectRatio="none" role="img" aria-label={OUTCOMES.map((o, i) => `${o.label} ${(pct[i] ?? 0).toFixed(1)}%`).join("、")}><rect className="text-muted" fill="currentColor" width="100" height="24" />{OUTCOMES.map((o, i) => <rect key={o.label} className={o.color} fill="currentColor" x={pct.slice(0, i).reduce((a, b) => a + b, 0)} width={pct[i]} height="24" />)}</svg>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">{OUTCOMES.map((o, i) => <div key={o.label} className="flex items-center gap-1.5 text-[11px]"><span className={`size-2 shrink-0 ${o.swatch}`} /><span className="text-muted-foreground">{o.label}</span><span className="ml-0.5 font-semibold tabular-nums">{(pct[i] ?? 0).toFixed(1)}%</span></div>)}</div>
-      {result && <div className="mt-4 grid gap-1 sm:grid-cols-2">{result.perOpponent.map(o => <div key={o.label} className="flex items-center justify-between gap-2 rounded border border-muted px-2 py-1 text-[11px]"><span className="truncate text-muted-foreground">{o.label}</span><span className="shrink-0 font-semibold tabular-nums">{o.win.toFixed(1)}%</span></div>)}</div>}
+      {result && <><p className="mt-3 text-[11px] text-muted-foreground">対戦カードをクリックすると、平均に最も近い代表試行の詳細戦報を表示します。</p><div className="mt-2 grid gap-1 sm:grid-cols-2">{result.perOpponent.map(o => <button key={o.label} type="button" disabled={!o.report} className="flex items-center justify-between gap-2 rounded border border-muted px-2 py-1 text-left text-[11px] transition-colors hover:border-gold disabled:cursor-default disabled:opacity-60" onClick={() => { if (o.report) setReportSel({ label: o.label, report: o.report }); }} aria-label={`${o.label}の詳細戦報を表示`}><span className="truncate text-muted-foreground">{o.label}</span><span className="shrink-0 font-semibold tabular-nums">{o.win.toFixed(1)}%</span></button>)}</div></>}
     </section>
 
     <section className="panel px-4 py-5 sm:px-6">
@@ -80,5 +82,6 @@ function TierBody({ perMatch }: { perMatch: number }) {
         </div>; })}</div>
       </div>)}</div>}
     </section>
+    {reportSel && <BattleReportModal report={reportSel.report} opponentLabel={reportSel.label} allyLabel={test.label} onClose={() => setReportSel(null)} />}
   </>;
 }
