@@ -33,6 +33,27 @@ describe("Troops, search and tactics", () => {
     expect(tacticById.get("t-荷駄崩し")?.effect).toContain("64%→128%");
     for (const template of TEMPLATES) expect(templateToSquad(template, [0, 0, 0]).troop).toBe(template.troop);
   });
+  it("returns a representative battle report with full logs and speed order", () => {
+    const template = TEMPLATES[0];
+    if (!template) throw new Error("Missing template");
+    const squad = templateToSquad(template, [0, 0, 0]);
+    const result = runSimulation(squad, [{ label: "test", squad }], 20);
+    const report = result.perOpponent[0]?.report;
+    expect(report).toBeDefined();
+    expect(report?.units).toHaveLength(6);
+    expect(report?.order).toHaveLength(6);
+    // 行動順バーは速度の降順
+    const speeds = report?.order.map(u => u.speed) ?? [];
+    expect([...speeds].sort((x, y) => y - x)).toEqual(speeds);
+    expect(report?.logs.some(l => l.turn === 0)).toBe(true); // 合戦開始
+    expect(report?.logs.some(l => l.turn >= 1)).toBe(true);
+    expect(report?.logs.every(l => l.turn >= 0 && l.turn <= 8)).toBe(true);
+    // 各ターン内の行動開始は、その時点の速度順（先攻を除く素の速度では単調とは限らないため、件数のみ確認）
+    expect(report?.logs.filter(l => l.kind === "行動開始").length).toBeGreaterThan(0);
+    expect(["勝利", "優勢", "引分", "劣勢", "敗北"]).toContain(report?.outcomeLabel);
+    expect(report?.allyTotal).toBe(30000);
+    expect(report?.allyRemaining + (report?.allyDead ?? 0)).toBe(30000);
+  });
   it("changes actual simulated damage when troop matchups change", () => {
     const template = TEMPLATES[0];
     if (!template) throw new Error("Missing template");
