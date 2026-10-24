@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier } from "@/lib/sengoku-data";
-import { runSimulation, TEMPLATES, templateToSquad } from "@/lib/simulator";
+import { parseTactic, runSimulation, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
@@ -72,6 +72,28 @@ describe("Troops, search and tactics", () => {
     const report = result.perOpponent[0]?.report;
     const names = new Set((report?.logs ?? []).map(l => l.tacticName).filter(Boolean));
     expect([...names].some(n => ["風林火山", "表裏比興", "鬼美濃"].includes(n ?? ""))).toBe(true);
+  });
+  it("parses generic mechanics from inherent tactic effects", () => {
+    const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
+    const kitakawa = parseTactic("相模の獅子", "能動", "45%", eff("北条氏康"), "S", { inherent: true });
+    expect(kitakawa.teppeki).toBe(2);
+    expect(kitakawa.teppekiChance).toBeCloseTo(0.85);
+    const kichiwako = parseTactic("鬼若子", "指揮", "100%", eff("長宗我部元親"), "S", { inherent: true });
+    expect(kichiwako.rengeki).toBeCloseTo(0.5);
+    expect(kichiwako.upStats).toContainEqual({ idx: 0, amount: 18 });
+    const hachiku = parseTactic("破竹の勢い", "受動", "100%", eff("加藤清正"), "S", { inherent: true });
+    expect(hachiku.crit).toBeCloseTo(0.7);
+    const sanza = parseTactic("攻めの三左", "能動", "45%", eff("森可成"), "S", { inherent: true });
+    expect(sanza.dots).toContainEqual({ kind: "潰走", rate: 72, type: "兵刃" });
+    const shibata = parseTactic("かかれ柴田", "能動", "50%", eff("柴田勝家"), "S", { inherent: true });
+    expect(shibata.cleanse).toBe(2);
+    expect(shibata.dmg[0]?.rate).toBe(154);
+    const ittetsu = parseTactic("一徹の意志", "能動", "40%", eff("稲葉一鉄"), "S", { inherent: true });
+    expect(ittetsu.taunt).toBe(true);
+    expect(ittetsu.upStats).toContainEqual({ idx: 0, amount: 150 });
+    const keika = parseTactic("警戒周到", "指揮", "100%", eff("三枝昌貞"), "A", { inherent: true });
+    expect(keika.takenDown).toBeCloseTo(0.22);
+    expect(keika.auraUntil).toBe(3);
   });
   it("changes actual simulated damage when troop matchups change", () => {
     const template = TEMPLATES[0];
