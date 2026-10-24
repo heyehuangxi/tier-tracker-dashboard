@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { decodeFormation, emptySquad, encodeFormation, normalizeTroop, normSquad, tacticById, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier } from "@/lib/sengoku-data";
+import { decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier } from "@/lib/sengoku-data";
 import { runSimulation, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { matchesName } from "@/components/tier/search-select";
 
@@ -52,7 +52,26 @@ describe("Troops, search and tactics", () => {
     expect(report?.logs.filter(l => l.kind === "行動開始").length).toBeGreaterThan(0);
     expect(["勝利", "優勢", "引分", "劣勢", "敗北"]).toContain(report?.outcomeLabel);
     expect(report?.allyTotal).toBe(30000);
-    expect(report?.allyRemaining + (report?.allyDead ?? 0)).toBe(30000);
+    expect((report?.allyRemaining ?? 0) + (report?.allyDead ?? 0)).toBe(30000);
+  });
+  it("has inherent tactic data for every general in the master", () => {
+    expect(INHERENT_TACTICS).toHaveLength(145);
+    for (const g of GENERALS) {
+      const inh = inherentByHolder.get(g.name);
+      expect(inh, g.name).toBeDefined();
+      expect(inh?.name).toBe(g.inherent);
+    }
+    expect(inherentByHolder.get("武田信玄")?.name).toBe("風林火山");
+    expect(inherentByHolder.get("真田昌幸")?.name).toBe("表裏比興");
+  });
+  it("fires inherent tactics in simulation and logs them", () => {
+    const template = TEMPLATES.find(t => t.label.includes("武田信玄"));
+    if (!template) throw new Error("Missing Takeda template");
+    const squad = templateToSquad(template, [0, 0, 0]);
+    const result = runSimulation(squad, [{ label: "test", squad }], 20);
+    const report = result.perOpponent[0]?.report;
+    const names = new Set((report?.logs ?? []).map(l => l.tacticName).filter(Boolean));
+    expect([...names].some(n => ["風林火山", "表裏比興", "鬼美濃"].includes(n ?? ""))).toBe(true);
   });
   it("changes actual simulated damage when troop matchups change", () => {
     const template = TEMPLATES[0];
