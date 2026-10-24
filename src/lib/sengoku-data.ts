@@ -1,6 +1,7 @@
 // 武将：提供マスターデータ（名将・良将）／戦法：提供マスターデータ（S・A）
 import MASTER from "./generals-master.json";
 import TACTICS_MASTER from "./tactics-master.json";
+import INHERENT_MASTER from "./inherent-master.json";
 export type Stats = [number, number, number, number]; // 統率・武勇・知略・速度（Lv50）
 export type General = { id: string; name: string; rarity: 5 | 4; faction: string; cost: number; stats: Stats; main: string; r1: string; r3: string; r5: string; inherent: string };
 export type Tactic = { id: string; name: string; grade: "S" | "A"; kind: string; rate: string; troop: string; effect: string };
@@ -21,6 +22,14 @@ export const tacticTip = (x: Tactic) => `${x.name}［${x.grade}・${x.kind}］\n
 
 export const generalById = new Map(GENERALS.map(x => [x.id, x]));
 export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
+
+// 固有戦法マスター（提供データ: inherent-tactics.tsv を変換した inherent-master.json）
+export type InherentTactic = { name: string; holder: string; grade: "S" | "A"; kind: string; rate: string; prep: number; effect: string; leader: string };
+type IM = { n: string; holder: string; g: "S" | "A"; k: string; r: string; prep: string; e: string; leader: string };
+export const INHERENT_TACTICS: InherentTactic[] = (INHERENT_MASTER as IM[]).map(x => ({ name: x.n, holder: x.holder, grade: x.g, kind: x.k, rate: x.r, prep: x.prep === "-" ? 0 : Number(x.prep) || 0, effect: x.e, leader: x.leader }));
+/** 所持武将名 → 固有戦法 */
+export const inherentByHolder = new Map(INHERENT_TACTICS.map(x => [x.holder, x]));
+export const inherentByName = new Map(INHERENT_TACTICS.map(x => [x.name, x]));
 
 export const MAX_SQUADS = 10;
 export const MAX_SAVED = 20;
