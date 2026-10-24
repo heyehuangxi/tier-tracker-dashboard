@@ -1,5 +1,5 @@
 // Tier測定 戦闘シミュレーター（ブラウザ内で完結する簡易モデル）
-import { generalById, tacticById, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, type TroopType, type Squad, type Stats } from "./sengoku-data";
+import { generalById, tacticById, inherentByHolder, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, type TroopType, type Squad, type Stats } from "./sengoku-data";
 
 export type TemplateMember = { name: string; tactics: [string, string]; alloc: string[] };
 export type Template = { label: string; troop: TroopType; members: TemplateMember[] };
@@ -74,26 +74,27 @@ export function weaponBase(atkWu: number, defTong: number, troops: number, multi
 
 type DmgKind = "兵刃" | "計略";
 type StatModSpec = { idx: number; amount: number };
-type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number };
+type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean };
 const maxPct = (re: RegExp, e: string) => { const m = e.match(re); return m ? Number(m[m.length - 1]) : 0; };
 const STAT_IDX: Record<string, number> = { 統率: 0, 武勇: 1, 知略: 2, 速度: 3 };
-/** 効果文から「統率・知略を低下（24〜48）」型のステータス増減を最大レベル値で抽出する */
+/** 効果文からステータス増減を最大レベル値で抽出する（「統率・知略を低下（24〜48）」「統率が150上昇」「統率が140減少」等の型に対応。％表記は対象外） */
 function statChanges(e: string, verb: "低下" | "増加"): StatModSpec[] {
   const out = new Map<number, number>();
-  const re = verb === "低下"
-    ? /([統率武勇知略速度](?:・[統率武勇知略速度])*)を低下（(?:[\d.]+)〜([\d.]+)）/g
-    : /([統率武勇知略速度](?:・[統率武勇知略速度])*)が(?:[\d.]+)〜([\d.]+)(?!%)増加/g;
-  for (const m of e.matchAll(re)) {
+  const names = "([統率武勇知略速度](?:[・と][統率武勇知略速度])*)";
+  const res = verb === "低下"
+    ? [new RegExp(`${names}を低下（(?:[\\d.]+)〜([\\d.]+)）`, "g"), new RegExp(`${names}が([\\d.]+)減少`, "g"), new RegExp(`${names}を(?:\\d+ターンの間、)?([\\d.]+)減少`, "g")]
+    : [new RegExp(`${names}が(?:[\\d.]+)〜([\\d.]+)(?!%)増加`, "g"), new RegExp(`${names}が([\\d.]+)(?:増加|上昇)`, "g")];
+  for (const re of res) for (const m of e.matchAll(re)) {
     const amount = Number(m[2]);
-    for (const name of (m[1] ?? "").split("・")) { const idx = STAT_IDX[name]; if (idx !== undefined && Number.isFinite(amount)) out.set(idx, amount); }
+    for (const name of (m[1] ?? "").split(/[・と]/)) { const idx = STAT_IDX[name]; if (idx !== undefined && Number.isFinite(amount)) out.set(idx, Math.max(out.get(idx) ?? 0, amount)); }
   }
   return [...out].map(([idx, amount]) => ({ idx, amount }));
 }
-function parseTactic(name: string, kind: string, rate: string, e: string, grade = "A"): TSpec {
+function parseTactic(name: string, kind: string, rate: string, e: string, grade = "A", opts: { rateOverride?: number; prepTurns?: number; inherent?: boolean } = {}): TSpec {
   const rp = Number(rate.replace("%", ""));
-  const prob = kind === "能動" || kind === "突撃" ? (Number.isFinite(rp) && rp > 0 ? rp / 100 : 0.35) : 1;
+  const prob = opts.rateOverride ?? (kind === "能動" || kind === "突撃" ? (Number.isFinite(rp) && rp > 0 ? rp / 100 : 0.35) : 1);
   const dmg: TSpec["dmg"] = [];
-  for (const m of e.matchAll(/(兵刃|計略)ダメージ（(?:[\d.]+%[〜→])?([\d.]+)%/g)) dmg.push({ type: m[1] as DmgKind, rate: Number(m[2]) });
+  for (const m of e.matchAll(/(兵刃|計略)ダメージ（(?:ダメージ率)?(?:[\d.]+%[〜→])?([\d.]+)%/g)) dmg.push({ type: m[1] as DmgKind, rate: Number(m[2]) });
   const heal = maxPct(/回復(?:率)?[（(](?:毎ターン)?(?:回復率)?(?:[\d.]+%[〜→])?([\d.]+)%/, e);
   const grant: TSpec["grant"] = {};
   if (/休養/.test(e)) grant.休養 = maxPct(/休養[（(](?:毎ターン)?(?:回復率)?(?:[\d.]+%[〜→])?([\d.]+)%/, e) || 50;
@@ -103,12 +104,12 @@ function parseTactic(name: string, kind: string, rate: string, e: string, grade 
   const innerM = e.match(/(?:[\d.]+%[〜→])?([\d.]+)%の確率/);
   const ctrlKinds = ["麻痺", "混乱", "封撃", "無策", "威圧", "疲弊"].filter(k => e.includes(k));
   const durM = e.match(/(\d+)ターン/);
-  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets: /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /自軍(全体|複数)/.test(e), dmgBuff: maxPct(/与ダメージが?(?:[\d.]+%[〜→])?([\d.]+)%(?:上昇|増加)/, e) / 100, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2 };
+  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets: /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /自軍(全体|複数)/.test(e), dmgBuff: maxPct(/与ダメージが?(?:[\d.]+%[〜→])?([\d.]+)%(?:上昇|増加)/, e) / 100, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false };
 }
 
 type Status = { rate: number; until: number };
 type StatMod = { idx: number; delta: number; until: number };
-type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; troops: number; max: number; specs: TSpec[]; status: Partial<Record<"回生" | "休養" | "離反" | "心攻", Status>>; healCutUntil: number; healCut: number; stunned: boolean; pending: TSpec[]; mods: StatMod[]; dmgMods: { delta: number; until: number }[]; ctrls: { kind: string; until: number }[]; priorityUntil: number; dealtBy: number; healedBy: number };
+type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; troops: number; max: number; specs: TSpec[]; status: Partial<Record<"回生" | "休養" | "離反" | "心攻", Status>>; healCutUntil: number; healCut: number; stunned: boolean; pending: { s: TSpec; delay: number }[]; mods: StatMod[]; dmgMods: { delta: number; until: number }[]; ctrls: { kind: string; until: number }[]; priorityUntil: number; dealtBy: number; healedBy: number; cooldownUntil: Map<string, number> };
 const FALLBACK: Stats = [160, 150, 160, 100];
 function buildUnits(q: Squad): Unit[] {
   const bonus = hasFactionBonus(q.generals);
@@ -117,10 +118,26 @@ function buildUnits(q: Squad): Unit[] {
     const id = q.generals[i]; const g = id ? generalById.get(id) : undefined;
     const base = g?.stats ?? FALLBACK; const al = q.alloc?.[i] ?? [0, 0, 0, 0];
     const st = base.map((v, k) => buffed(v + (al[k] ?? 0), bonus)) as Stats;
-    const specs = [q.tactics[i * 2], q.tactics[i * 2 + 1]].map(id => (id ? tacticById.get(id) : undefined)).filter(Boolean).map(t => parseTactic(t!.name, t!.kind, t!.rate, t!.effect, t!.grade));
-    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: MAX_TROOPS, max: MAX_TROOPS, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0 };
+    const equipped = [q.tactics[i * 2], q.tactics[i * 2 + 1]].map(id => (id ? tacticById.get(id) : undefined)).filter(Boolean).map(t => parseTactic(t!.name, t!.kind, t!.rate, t!.effect, t!.grade));
+    // 固有戦法（所持武将の固有をマスターから取得し、発動率・準備ターンは提供データの列を正とする）
+    const specs: TSpec[] = [...equipped];
+    const inh = g ? inherentByHolder.get(g.name) : undefined;
+    if (inh) {
+      const ratePct = Number(inh.rate.replace("%", ""));
+      const spec = parseTactic(inh.name, inh.kind, inh.rate, inh.effect, inh.grade, { rateOverride: inh.rate === "-" ? 1 : Number.isFinite(ratePct) ? ratePct / 100 : 1, prepTurns: inh.prep, inherent: true });
+      if (i === 0 && inh.leader) {
+        // 大将技の簡易反映: ダメージ率上昇と対象数固定のみ
+        const boost = inh.leader.match(/ダメージ率が([\d.]+)%上昇/);
+        if (boost) for (const d of spec.dmg) d.rate = Math.round(d.rate * (1 + Number(boost[1]) / 100));
+        if (/攻撃対象数が3名に固定/.test(inh.leader)) spec.targets = 3;
+      }
+      specs.unshift(spec);
+    }
+    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: MAX_TROOPS, max: MAX_TROOPS, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map() };
     // 受動・指揮・兵種の付与系（休養・離反・心攻など）は戦闘開始から常時
     for (const s of specs) if (s.prob >= 1 && s.kind !== "突撃" && s.kind !== "能動") for (const [k, v] of Object.entries(s.grant)) if (k !== "回生") u.status[k as keyof Unit["status"]] = { rate: v!, until: 99 };
+    // 指揮・受動の固有戦法にある恒常的なステータス上昇は戦闘開始から適用
+    for (const s of specs) if (s.inherent && (s.kind === "指揮" || s.kind === "受動")) for (const up of s.upStats) u.mods.push({ idx: up.idx, delta: up.amount, until: 99 });
     return u;
   });
 }
@@ -216,6 +233,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     return d;
   };
   const fire = (src: Unit, s: TSpec, own: Unit[], foe: Unit[], mine: boolean, turn: number, mainTarget?: Unit) => {
+    if (s.cooldown) src.cooldownUntil.set(s.name, turn + 1);
     const until = turn + s.duration - 1;
     // --- パイプライン 1: バフ先行適用（このターンの攻撃から即時反映） ---
     const effectNames: string[] = [];
@@ -252,14 +270,23 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     }
     if (collectLog) logs.push({ turn: turn + 1, kind: "行動開始", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: hasPriority(u, turn) ? ["先攻"] : [], segments: [seg(u), { text: ` の行動開始 兵力${Math.round(u.troops)} 速度${Math.round(effSpeed(u, turn))}${hasPriority(u, turn) ? "（先攻）" : ""}`, tone: "plain" }] });
     const rest = active(u, "休養", turn); if (rest) doHeal(u, u, rest.rate, turn, mine, "休養");
-    for (const s of u.pending.splice(0)) fire(u, s, own, foe, mine, turn);
+    // 準備中の戦法は残り準備ターンを消化し、0になったものから発動する
+    const ready: TSpec[] = [];
+    u.pending = u.pending.filter(p => { p.delay -= 1; if (p.delay <= 0) { ready.push(p.s); return false; } return true; });
+    for (const s of ready) fire(u, s, own, foe, mine, turn);
     for (const s of u.specs) {
-      if (s.kind === "能動" && Math.random() < s.prob) { if (s.prepare) u.pending.push(s); else fire(u, s, own, foe, mine, turn); }
+      if (turn <= (u.cooldownUntil.get(s.name) ?? -1)) continue;
+      if (s.kind === "能動" && Math.random() < s.prob) {
+        const prep = s.prepTurns || (s.prepare ? 1 : 0);
+        if (prep > 0 && turn + prep < 8) u.pending.push({ s, delay: prep }); else if (prep === 0) fire(u, s, own, foe, mine, turn);
+      }
+      // 指揮・受動は毎ターンの行動時に判定する（反応型の効果もこの枠で近似）。発動率は提供データの列を使用し、効果文中の確率があれば併せる
+      else if ((s.kind === "指揮" || s.kind === "受動") && (s.dmg.length || s.heal)) { if (Math.random() < Math.min(1, s.prob * (s.inner || 1))) fire(u, s, own, foe, mine, turn); }
       else if (s.kind !== "能動" && s.kind !== "突撃" && s.heal && Math.random() < s.inner) fire(u, { ...s, dmg: [] }, own, foe, mine, turn);
     }
     const target = pick(alive(foe), 1)[0]; if (!target) return;
     damage(u, target, "兵刃", 100, mine, turn); // 通常攻撃（現在兵数を即時使用）
-    for (const s of u.specs) if (s.kind === "突撃" && Math.random() < s.prob) fire(u, s, own, foe, mine, turn, target);
+    for (const s of u.specs) if (s.kind === "突撃" && Math.random() < s.prob && turn > (u.cooldownUntil.get(s.name) ?? -1)) fire(u, s, own, foe, mine, turn, target);
   };
   for (let turn = 0; turn < 8; turn++) {
     // 毎ターン、残り全員の最終速度と先攻を再判定して最速の1名ずつ行動させる（ターン中のバフ・デバフ・制御も次判定に反映）
