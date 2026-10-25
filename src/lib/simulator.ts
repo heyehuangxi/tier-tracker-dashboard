@@ -75,7 +75,7 @@ export function weaponBase(atkWu: number, defTong: number, troops: number, multi
 type DmgKind = "兵刃" | "計略";
 type StatModSpec = { idx: number; amount: number };
 type DotSpec = { kind: string; rate: number; type: DmgKind };
-type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; dots: DotSpec[]; dotChance: number; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number };
+type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; dots: DotSpec[]; dotChance: number; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number };
 export type { TSpec };
 const maxPct = (re: RegExp, e: string) => { const m = e.match(re); return m ? Number(m[m.length - 1]) : 0; };
 const STAT_IDX: Record<string, number> = { 統率: 0, 武勇: 1, 知略: 2, 速度: 3 };
@@ -113,6 +113,8 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const kishaku = kishakuM ? Number(kishakuM[1]) / 100 : 0;
   const rengekiM = e.match(/([\d.]+)%の連撃/);
   const rengeki = rengekiM ? Number(rengekiM[1]) / 100 : /連撃を獲得|連撃（1ターンに2回通常攻撃）/.test(e) ? 1 : 0;
+  const ranbuM = e.match(/([\d.]+)%の乱舞/);
+  const ranbu = ranbuM ? Number(ranbuM[1]) / 100 : /乱舞を獲得/.test(e) ? 1 : 0;
   const evadeM = e.match(/([\d.]+)%の回避/);
   const evade = evadeM ? Number(evadeM[1]) / 100 : 0;
   const takenDown = Math.max(maxPct(/被ダメージが(?:[\d.]+%[〜→])?([\d.]+)%低下/, e), maxPct(/被ダメージを(?:[\d.]+%[〜→])?([\d.]+)%(?:低下|低減)/, e)) / 100;
@@ -131,14 +133,14 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const teppekiChance = teppekiMatch?.[2] ? Number(teppekiMatch[2]) / 100 : teppeki && /確率/.test(e) ? (innerM ? Number(innerM[1]) / 100 : 1) : 1;
   const auraM = e.match(/(\d+)ターン目(?:終了)?まで/);
   const auraUntil = auraM ? Number(auraM[1]) - 1 : 99;
-  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets: /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff: name === "軍神" ? 0 : maxPct(/与ダメージが?(?:[\d.]+%[〜→])?([\d.]+)%(?:（[^）]*）)?(?:上昇|増加)/, e) / 100, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade, takenDown, dots, dotChance, taunt, cleanse, teppeki, teppekiChance, auraUntil };
+  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets: /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff: name === "軍神" ? 0 : maxPct(/与ダメージが?(?:[\d.]+%[〜→])?([\d.]+)%(?:（[^）]*）)?(?:上昇|増加)/, e) / 100, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade, takenDown, dots, dotChance, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu };
 }
 
 type Status = { rate: number; until: number };
 type StatMod = { idx: number; delta: number; until: number };
 type RateMod = { rate: number; type: DmgKind | "両方"; until: number };
 type DotState = { kind: string; rate: number; type: DmgKind; until: number; src: Unit; mine: boolean };
-type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; troops: number; max: number; specs: TSpec[]; status: Partial<Record<"回生" | "休養" | "離反" | "心攻", Status>>; healCutUntil: number; healCut: number; stunned: boolean; pending: { s: TSpec; delay: number }[]; mods: StatMod[]; dmgMods: { delta: number; until: number }[]; ctrls: { kind: string; until: number }[]; priorityUntil: number; dealtBy: number; healedBy: number; cooldownUntil: Map<string, number>; critMods: RateMod[]; rengekiMods: { rate: number; until: number }[]; evadeMods: { rate: number; until: number }[]; takenMods: { delta: number; until: number }[]; dots: DotState[]; taunt: { src: Unit; until: number } | null; teppeki: number; tame: number; gunshin: boolean; isLeader: boolean };
+type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; troops: number; max: number; specs: TSpec[]; status: Partial<Record<"回生" | "休養" | "離反" | "心攻", Status>>; healCutUntil: number; healCut: number; stunned: boolean; pending: { s: TSpec; delay: number }[]; mods: StatMod[]; dmgMods: { delta: number; until: number }[]; ctrls: { kind: string; until: number }[]; priorityUntil: number; dealtBy: number; healedBy: number; cooldownUntil: Map<string, number>; critMods: RateMod[]; rengekiMods: { rate: number; until: number }[]; evadeMods: { rate: number; until: number }[]; takenMods: { delta: number; until: number }[]; dots: DotState[]; taunt: { src: Unit; until: number } | null; teppeki: number; tame: number; gunshin: boolean; isLeader: boolean; ranbuMods: { rate: number; until: number }[] };
 const FALLBACK: Stats = [160, 150, 160, 100];
 function buildUnits(q: Squad): Unit[] {
   const bonus = hasFactionBonus(q.generals);
@@ -162,7 +164,7 @@ function buildUnits(q: Squad): Unit[] {
       }
       specs.unshift(spec);
     }
-    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: MAX_TROOPS, max: MAX_TROOPS, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0 };
+    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: MAX_TROOPS, max: MAX_TROOPS, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0, ranbuMods: [] };
     // 受動・指揮・兵種の付与系（休養・離反・心攻など）は戦闘開始から常時
     for (const s of specs) if (s.prob >= 1 && s.kind !== "突撃" && s.kind !== "能動") for (const [k, v] of Object.entries(s.grant)) if (k !== "回生") u.status[k as keyof Unit["status"]] = { rate: v!, until: 99 };
     return u;
@@ -179,6 +181,7 @@ function buildUnits(q: Squad): Unit[] {
       if (s.kishaku) t.critMods.push({ rate: s.kishaku, type: "計略", until: s.auraUntil });
       if (s.rengeki) t.rengekiMods.push({ rate: s.rengeki, until: s.auraUntil });
       if (s.evade) t.evadeMods.push({ rate: s.evade, until: s.auraUntil });
+      if (s.ranbu && !t.gunshin) t.ranbuMods.push({ rate: s.ranbu, until: s.auraUntil }); // 軍神は乱舞獲得不可
     }
   }
   return units;
@@ -326,8 +329,9 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
         if (s.rengeki) u.rengekiMods.push({ rate: s.rengeki, until });
         if (s.evade) u.evadeMods.push({ rate: s.evade, until });
         if (s.takenDown) u.takenMods.push({ delta: s.takenDown, until });
+        if (s.ranbu && !u.gunshin) u.ranbuMods.push({ rate: s.ranbu, until }); // 軍神は乱舞獲得不可
       }
-      if (s.crit) effectNames.push("会心"); if (s.kishaku) effectNames.push("奇策"); if (s.rengeki) effectNames.push("連撃"); if (s.evade) effectNames.push("回避"); if (s.takenDown) effectNames.push("被ダメージ低下");
+      if (s.crit) effectNames.push("会心"); if (s.kishaku) effectNames.push("奇策"); if (s.rengeki) effectNames.push("連撃"); if (s.evade) effectNames.push("回避"); if (s.takenDown) effectNames.push("被ダメージ低下"); if (s.ranbu) effectNames.push("乱舞");
     }
     // --- 対象決定（挑発・牽制を受けている場合はその付与者に固定） ---
     let targets = mainTarget && s.kind === "突撃" ? [mainTarget] : pick(alive(foe), s.targets);
@@ -387,12 +391,18 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     const stacks = u.gunshin ? u.tame : 0;
     if (stacks > 0 && collectLog) logs.push({ turn: turn + 1, kind: "状態", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: [`溜め×${stacks}`], segments: [seg(u), { text: ` の`, tone: "plain" }, { text: `溜め×${stacks}`, tone: "effect" }, { text: `（通常攻撃ダメージ+${stacks * 10}%）`, tone: "plain" }] });
     const atkRate = 100 * (1 + stacks * 0.1);
-    damage(u, target, "兵刃", atkRate, mine, turn); // 通常攻撃（現在兵数を即時使用）
+    // 乱舞: 通常攻撃時、確率で対象と同一部隊の他武将にも通常攻撃と同計算のダメージを付与（軍神は獲得不可）
+    const normalHit = (dst: Unit) => {
+      damage(u, dst, "兵刃", atkRate, mine, turn); // 通常攻撃（現在兵数を即時使用）
+      const rb = u.gunshin ? 0 : maxRate(u.ranbuMods, turn);
+      if (rb > 0 && Math.random() < rb) for (const other of foe) if (other !== dst && other.troops > 0) damage(u, other, "兵刃", atkRate, mine, turn, { label: "乱舞", grade: "A", kind: "通常攻撃" });
+    };
+    normalHit(target);
     // 連撃: 確率でもう1回通常攻撃（溜めの上昇はこの行動内の通常攻撃すべてに適用）
     const rg = maxRate(u.rengekiMods, turn);
     if (rg > 0 && Math.random() < rg && u.troops > 0) {
       const t2 = u.taunt && turn <= u.taunt.until && u.taunt.src.troops > 0 ? u.taunt.src : pick(alive(foe), 1)[0];
-      if (t2) damage(u, t2, "兵刃", atkRate, mine, turn);
+      if (t2) normalHit(t2);
     }
     if (u.gunshin) u.tame = 0; // 通常攻撃後に「溜め」リセット
     tameTrigger(u, own); // 味方の通常攻撃は軍神の「溜め」判定対象（自身は tameTrigger 内で除外）
