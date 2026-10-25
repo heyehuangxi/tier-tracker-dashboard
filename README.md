@@ -54,3 +54,34 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## 公開して使う（みんなが使える形）
+
+このサイトはブラウザだけで動作するWebアプリです（所持・編成データは各利用者のブラウザ内 localStorage にのみ保存され、サーバーへ送信されません）。公開URLを1つ用意すれば、誰でもそのURLを開くだけで使えます。
+
+### 方法A: Lovableで公開（推奨・最速）
+
+1. [Lovable editor](https://lovable.dev/projects/fd6226b9-b8ec-4488-b9c9-c9f09319f39d) を開く
+2. 右上の **Publish** を押す
+3. 発行されたURL（`*.lovable.app`）を共有する
+
+GitHub の `main` へ push した変更は Lovable に自動で同期されるため、再 Publish すれば最新版が公開されます。
+
+### 方法B: Cloudflare Workersへデプロイ
+
+ビルド成果物（Nitro の cloudflare-module プリセット）をそのままデプロイできます。Cloudflare アカウントとログインが必要です。
+
+```sh
+npm ci
+npm run deploy:cf
+```
+
+
+### アプリとしてインストール（PWA）
+
+公開URLを開いた端末では、アプリとしてインストールできます。
+
+- iPhone / iPad（Safari）: 共有ボタン →「ホーム画面に追加」
+- Android（Chrome） / PC（Chrome・Edge）: アドレスバーのインストールアイコン、またはメニューの「アプリをインストール」
+
+インストール後はホーム画面・アプリ一覧から通常のアプリと同じように起動できます。
