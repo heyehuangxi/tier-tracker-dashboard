@@ -2,6 +2,7 @@
 import MASTER from "./generals-master.json";
 import TACTICS_MASTER from "./tactics-master.json";
 import INHERENT_MASTER from "./inherent-master.json";
+import TRAITS_MASTER from "./traits-master.json";
 export type Stats = [number, number, number, number]; // 統率・武勇・知略・速度（Lv50）
 export type General = { id: string; name: string; rarity: 5 | 4; faction: string; cost: number; stats: Stats; main: string; r1: string; r3: string; r5: string; inherent: string };
 export type Tactic = { id: string; name: string; grade: "S" | "A"; kind: string; rate: string; troop: string; effect: string };
@@ -27,6 +28,22 @@ export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
 export type InherentTactic = { name: string; holder: string; grade: "S" | "A"; kind: string; rate: string; prep: number; effect: string; leader: string };
 type IM = { n: string; holder: string; g: "S" | "A"; k: string; r: string; prep: string; e: string; leader: string };
 export const INHERENT_TACTICS: InherentTactic[] = (INHERENT_MASTER as IM[]).map(x => ({ name: x.n, holder: x.holder, grade: x.g, kind: x.k, rate: x.r, prep: x.prep === "-" ? 0 : Number(x.prep) || 0, effect: x.e, leader: x.leader }));
+// 特性マスター（提供データ: traits.tsv を変換した traits-master.json。名称→効果の対応表）
+export type Trait = { name: string; category: string; effect: string };
+type TRM = { n: string; g: string; e: string };
+export const TRAITS: Trait[] = (TRAITS_MASTER as TRM[]).map(x => ({ name: x.n, category: x.g, effect: x.e }));
+export const traitByName = new Map(TRAITS.map(x => [x.name, x]));
+/** 武将マスター側の表記ゆれを吸収して特性を引く（半角ローマ数字→全角、知略Ⅱはマスター側の誤記で知恵Ⅱを指す） */
+const TRAIT_ALIASES: Record<string, string> = { "知略Ⅱ": "知恵Ⅱ" };
+const ROMAN_FULL: Record<string, string> = { I: "Ⅰ", II: "Ⅱ", III: "Ⅲ" };
+const normalizeTraitName = (name: string) => name.replace(/(I{1,3})$/, m => ROMAN_FULL[m] ?? m);
+export const traitFor = (name: string | undefined): Trait | undefined => {
+  if (!name || name === "-") return undefined;
+  return traitByName.get(name) ?? traitByName.get(TRAIT_ALIASES[name] ?? "") ?? traitByName.get(normalizeTraitName(name));
+};
+/** 凸数に応じて有効になる特性名（無凸の金帯＋1凸・3凸・5凸） */
+export const activeTraitNames = (g: General, rank: number): string[] => [g.main, ...(rank >= 1 ? [g.r1] : []), ...(rank >= 3 ? [g.r3] : []), ...(rank >= 5 ? [g.r5] : [])].filter(n => n && n !== "-");
+
 /** 所持武将名 → 固有戦法 */
 export const inherentByHolder = new Map(INHERENT_TACTICS.map(x => [x.holder, x]));
 export const inherentByName = new Map(INHERENT_TACTICS.map(x => [x.name, x]));
