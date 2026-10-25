@@ -86,6 +86,17 @@ describe("Troops, search and tactics", () => {
     const logs = result.perOpponent[0]?.report?.logs ?? [];
     expect(logs.some(l => l.actor === "上杉謙信" && l.effects.some(e => e.startsWith("溜め×")))).toBe(true);
   });
+  it("implements ranbu splash on normal attacks, excluding gunshin", () => {
+    const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
+    expect(parseTactic("七本槍筆頭", "受動", "100%", eff("福島正則"), "S", { inherent: true }).ranbu).toBeCloseTo(0.92);
+    expect(parseTactic("掃疑平乱", "能動", "30%", eff("伊達晴宗"), "S", { inherent: true }).ranbu).toBeCloseTo(0.78);
+    expect(parseTactic("軍神", "受動", "100%", eff("上杉謙信"), "S", { inherent: true }).ranbu).toBe(0);
+    const squad: Squad = { ...emptySquad(), generals: ["g-福島正則", "g-前田利家", "g-加藤清正"] };
+    const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+    const result = runSimulation(squad, [{ label: "weak", squad: weak }], 20);
+    const logs = result.perOpponent[0]?.report?.logs ?? [];
+    expect(logs.some(l => l.tacticName === "乱舞" && l.actor === "福島正則")).toBe(true);
+  });
   it("parses generic mechanics from inherent tactic effects", () => {
     const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
     const kitakawa = parseTactic("相模の獅子", "能動", "45%", eff("北条氏康"), "S", { inherent: true });
