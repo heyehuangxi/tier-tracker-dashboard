@@ -97,6 +97,20 @@ describe("Troops, search and tactics", () => {
     const logs = result.perOpponent[0]?.report?.logs ?? [];
     expect(logs.some(l => l.tacticName === "乱舞" && l.actor === "福島正則")).toBe(true);
   });
+  it("implements Date Masamune sui stacks and Honganji Kennyo ikki", () => {
+    const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+    const masamune: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-伊達政宗", "g-伊達晴宗", "g-伊達輝宗"] };
+    const r1 = runSimulation(masamune, [{ label: "weak", squad: weak }], 20);
+    const logs1 = r1.perOpponent[0]?.report?.logs ?? [];
+    expect(logs1.some(l => l.effects.includes("粋消費"))).toBe(true);
+    expect(logs1.some(l => l.tacticName === "伊達の粋" && (l.damage ?? 0) > 0)).toBe(true);
+    const kennyo: Squad = { ...emptySquad(), generals: ["g-本願寺顕如", "g-鈴木佐大夫", "g-雑賀孫市"] };
+    const squad2: Squad = GENERALS.some(g => g.id === "g-雑賀孫市") ? kennyo : { ...emptySquad(), generals: ["g-本願寺顕如", "g-鈴木佐大夫", "g-下間頼廉"] };
+    const r2 = runSimulation(squad2, [{ label: "weak", squad: weak }], 20);
+    const logs2 = r2.perOpponent[0]?.report?.logs ?? [];
+    expect(logs2.some(l => l.effects.includes("一揆発動") || l.effects.includes("一揆状態"))).toBe(true);
+    expect(logs2.some(l => l.tacticName === "一揆" && (l.damage ?? 0) > 0)).toBe(true);
+  });
   it("parses generic mechanics from inherent tactic effects", () => {
     const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
     const kitakawa = parseTactic("相模の獅子", "能動", "45%", eff("北条氏康"), "S", { inherent: true });
