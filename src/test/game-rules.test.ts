@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier } from "@/lib/sengoku-data";
+import { decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, runSimulation, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { matchesName } from "@/components/tier/search-select";
 
@@ -72,6 +72,19 @@ describe("Troops, search and tactics", () => {
     const report = result.perOpponent[0]?.report;
     const names = new Set((report?.logs ?? []).map(l => l.tacticName).filter(Boolean));
     expect([...names].some(n => ["風林火山", "表裏比興", "鬼美濃"].includes(n ?? ""))).toBe(true);
+  });
+  it("handles 軍神 tame stacks instead of a permanent damage buff", () => {
+    const eff = inherentByHolder.get("上杉謙信")?.effect ?? "";
+    const spec = parseTactic("軍神", "受動", "100%", eff, "S", { inherent: true });
+    // 「最大時160%上昇」を常時バフとして誤読しない（溜めはスタック機構で処理する）
+    expect(spec.dmgBuff).toBe(0);
+    expect(spec.dmg).toHaveLength(0);
+    // 謙信を大将にすると大将技で毎ターン溜めが貯まるため、戦報に溜め消費が必ず現れる
+    const allies: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-上杉謙信", "g-柿崎景家", "g-甘粕景持"] };
+    const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+    const result = runSimulation(allies, [{ label: "weak", squad: weak }], 20);
+    const logs = result.perOpponent[0]?.report?.logs ?? [];
+    expect(logs.some(l => l.actor === "上杉謙信" && l.effects.some(e => e.startsWith("溜め×")))).toBe(true);
   });
   it("parses generic mechanics from inherent tactic effects", () => {
     const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
