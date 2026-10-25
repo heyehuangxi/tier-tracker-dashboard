@@ -21,6 +21,11 @@ export function AppShell({ title, description, children }: { title: string; desc
         {description && <span className="ml-1 hidden min-w-0 truncate border-l border-muted pl-4 text-[11px] text-muted-foreground/70 lg:block">{description}</span>}
       </header>
       <div className="content-wrap space-y-4 px-4 py-5 sm:px-6 sm:py-6">{children}</div>
+      <footer className="px-4 pb-6 sm:px-6">
+        <p className="text-[11px] leading-relaxed text-muted-foreground/70">
+          本サイト「ぴえんで候」は『信長の野望 真戦』の非公式ファンツールです。ゲーム公式とは関係ありません。シミュレーション結果は試算であり、実際の戦闘結果を保証するものではありません。所持・編成などのデータはお使いのブラウザ内（localStorage）にのみ保存され、サーバーへ送信されることはありません。
+        </p>
+      </footer>
     </main>
     {notice && <div role="status" className="panel fixed bottom-5 right-4 z-50 flex max-w-[calc(100%-32px)] items-center gap-3 px-4 py-3 text-xs"><Check className="size-4 shrink-0 text-primary" /><span className="break-all">{notice}</span><Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label="通知を閉じる" onClick={() => setNotice("")}><X /></Button></div>}
   </div></NoticeCtx.Provider>;
