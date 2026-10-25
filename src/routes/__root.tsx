@@ -79,12 +79,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "ぴえんで候" },
-      { name: "description", content: "ぴえんで候 — 編成評価と戦闘シミュレーション" },
+      {
+        name: "description",
+        content: "ぴえんで候 — 『信長の野望 真戦』の編成評価と戦闘シミュレーション（非公式ファンツール）",
+      },
       { name: "author", content: "ぴえんで候" },
+      { name: "theme-color", content: "#0d0e10" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "ぴえんで候" },
       { property: "og:title", content: "ぴえんで候" },
-      { property: "og:description", content: "ぴえんで候 — 編成評価と戦闘シミュレーション" },
+      {
+        property: "og:description",
+        content: "ぴえんで候 — 『信長の野望 真戦』の編成評価と戦闘シミュレーション（非公式ファンツール）",
+      },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [
       {
@@ -92,6 +103,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/favicon.ico" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
@@ -116,6 +130,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // PWA: 本番でのみ service worker を登録し、インストール可能なWebアプリとして配信する
+  useEffect(() => {
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
