@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
-import { parseTactic, runSimulation, TEMPLATES, templateToSquad } from "@/lib/simulator";
+import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
+import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
@@ -110,6 +110,31 @@ describe("Troops, search and tactics", () => {
     const logs2 = r2.perOpponent[0]?.report?.logs ?? [];
     expect(logs2.some(l => l.effects.includes("一揆発動") || l.effects.includes("一揆状態"))).toBe(true);
     expect(logs2.some(l => l.tacticName === "一揆" && (l.damage ?? 0) > 0)).toBe(true);
+  });
+  it("wires rank traits from the trait dataset into the simulator", () => {
+    expect(TRAITS).toHaveLength(165);
+    // 全武将の特性（無凸〜5凸）が表記ゆれ吸収込みで全て引ける
+    for (const g of GENERALS) for (const name of activeTraitNames(g, 5)) expect(traitFor(name), `${g.name}:${name}`).toBeDefined();
+    // 凸数での解放: 上杉謙信は無凸=義の将、3凸で破敵Ⅱ、5凸で馬術Ⅱ
+    const kenshin = GENERALS.find(g => g.name === "上杉謙信")!;
+    expect(activeTraitNames(kenshin, 0)).toEqual(["義の将"]);
+    expect(activeTraitNames(kenshin, 3)).toContain("破敵Ⅱ");
+    expect(activeTraitNames(kenshin, 5)).toContain("馬術Ⅱ");
+    // 人は城（武田信玄1凸）: 部隊全員の統率が+5%される
+    const squad = (r: number): Squad => ({ ...emptySquad(), troop: "騎兵", generals: ["g-武田信玄", "g-馬場信春", "g-山本勘助"], ranks: [r, 0, 0] });
+    const at0 = squadTraitEffects(squad(0)), at1 = squadTraitEffects(squad(1));
+    for (let i = 0; i < 3; i++) expect((at1[i]?.stats[0] ?? 0)).toBeGreaterThan(at0[i]?.stats[0] ?? 0);
+    expect(at1[0]?.traits).toContain("人は城");
+    // 三矢家訓（毛利元就1凸）: 3名のメイン属性が全て異なる場合、それぞれ+8
+    const mainOf = (id: string) => { const g = GENERALS.find(x => x.id === id)!; return [0, 1, 2].reduce((b, k) => ((g.stats[k] ?? 0) > (g.stats[b] ?? 0) ? k : b), 0); };
+    const mori = "g-毛利元就";
+    const others = [0, 1, 2].filter(i => i !== mainOf(mori)).map(i => GENERALS.find(g => g.id !== mori && mainOf(g.id) === i)!.id);
+    const trio = (r: number): Squad => ({ ...emptySquad(), generals: [mori, others[0]!, others[1]!], ranks: [r, 0, 0] });
+    const t0 = squadTraitEffects(trio(0)), t1 = squadTraitEffects(trio(1));
+    for (let i = 0; i < 3; i++) { const mi = mainOf(trio(1).generals[i]!); expect((t1[i]?.stats[mi] ?? 0) - (t0[i]?.stats[mi] ?? 0)).toBe(8); }
+    // 高凸でもシミュレーションが完走する
+    const hi = templateToSquad(TEMPLATES[0]!, [5, 5, 5]);
+    expect(runSimulation(hi, [{ label: "x", squad: hi }], 5).perOpponent[0]?.report).toBeDefined();
   });
   it("parses generic mechanics from inherent tactic effects", () => {
     const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
