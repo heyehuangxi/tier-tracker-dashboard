@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
-import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
+import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
@@ -221,5 +221,16 @@ describe("Troops, search and tactics", () => {
     expect(ALL_TACTIC_IDS).toHaveLength(ALL_TACTICS.length);
     expect(new Set(ALL_TACTIC_IDS).size).toBe(ALL_TACTICS.length);
     expect(ALL_GENERAL_IDS.every(id => ALL_GENERALS.some(g => g.id === id))).toBe(true);
+  });
+  it("round-trips owned lists through import links", () => {
+    const g = [ALL_GENERALS[0]!.id, ALL_GENERALS[5]!.id, ALL_GENERALS[140]!.id];
+    const t = [ALL_TACTICS[0]!.id, ALL_TACTICS[120]!.id];
+    const decoded = decodeOwned(encodeOwned(g, t));
+    expect(decoded?.g).toEqual(g);
+    expect(decoded?.t).toEqual(t);
+    expect(decodeOwned(encodeOwned([], []))).toEqual({ g: [], t: [] });
+    expect(decodeOwned(encodeOwned(ALL_GENERAL_IDS, ALL_TACTIC_IDS))?.g).toHaveLength(ALL_GENERALS.length);
+    expect(decodeOwned("garbage")).toBeNull();
+    expect(decodeOwned("1AAAA")).toBeNull();
   });
 });
