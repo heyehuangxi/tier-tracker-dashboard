@@ -40,6 +40,8 @@ function Explore() {
   const [ownedT] = useOwnedList(KEYS.ownedTactics, ALL_TACTIC_IDS);
   const [count, setCount] = useState(50);
   const [pool, setPool] = useState<"all" | "owned">("all");
+  const [gFilter, setGFilter] = useState<"all" | "r5">("all");
+  const [tFilter, setTFilter] = useState<"all" | "s">("all");
   const [selfRank, setSelfRank] = useState(0);
   const [enemyRank, setEnemyRank] = useState(0);
   const [running, setRunning] = useState(false);
@@ -48,10 +50,12 @@ function Explore() {
   const cancelRef = useRef(false);
 
   async function run() {
-    const gPool = pool === "owned" ? GENERALS.filter(g => ownedG.includes(g.id)) : GENERALS;
-    const tPool = pool === "owned" ? TACTICS.filter(t => ownedT.includes(t.id)) : TACTICS;
-    if (gPool.length < 3) return notify("所持武将が3名未満のため探索できません。所持管理で登録するか、プールを「全武将」にしてください。");
-    if (tPool.length < 6) return notify("所持戦法が6つ未満のため探索できません。所持管理で登録するか、プールを「全戦法」にしてください。");
+    const gBase = pool === "owned" ? GENERALS.filter(g => ownedG.includes(g.id)) : GENERALS;
+    const tBase = pool === "owned" ? TACTICS.filter(t => ownedT.includes(t.id)) : TACTICS;
+    const gPool = gFilter === "r5" ? gBase.filter(g => g.rarity === 5) : gBase;
+    const tPool = tFilter === "s" ? tBase.filter(t => t.grade === "S") : tBase;
+    if (gPool.length < 3) return notify("対象の武将が3名未満のため探索できません。プールや絞り込みの条件を緩めるか、所持管理で登録してください。");
+    if (tPool.length < 6) return notify("対象の戦法が6つ未満のため探索できません。プールや絞り込みの条件を緩めるか、所持管理で登録してください。");
     cancelRef.current = false;
     setRunning(true); setResults([]);
     const opponents = TEMPLATES.map((t, i) => ({ label: `テンプレ${i + 1}`, squad: templateToSquad(t, [enemyRank, enemyRank, enemyRank]) }));
@@ -140,6 +144,8 @@ function Explore() {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]">
         <div className="flex items-center gap-2"><span className="font-semibold">候補数</span>{[20, 50, 100, 1000, 5000].map(n => <Button key={n} size="sm" variant={chip(count === n)} className="h-7 px-3 text-[11px]" onClick={() => setCount(n)} disabled={running}>{n.toLocaleString("en-US")}件</Button>)}</div>
         <div className="flex items-center gap-2"><span className="font-semibold">プール</span><Button size="sm" variant={chip(pool === "all")} className="h-7 px-3 text-[11px]" onClick={() => setPool("all")} disabled={running}>全武将・全戦法</Button><Button size="sm" variant={chip(pool === "owned")} className="h-7 px-3 text-[11px]" onClick={() => setPool("owned")} disabled={running}>所持のみ</Button></div>
+        <div className="flex items-center gap-2"><span className="font-semibold">武将</span><Button size="sm" variant={chip(gFilter === "all")} className="h-7 px-3 text-[11px]" onClick={() => setGFilter("all")} disabled={running}>すべて</Button><Button size="sm" variant={chip(gFilter === "r5")} className="h-7 px-3 text-[11px]" onClick={() => setGFilter("r5")} disabled={running}>星5のみ</Button></div>
+        <div className="flex items-center gap-2"><span className="font-semibold">戦法</span><Button size="sm" variant={chip(tFilter === "all")} className="h-7 px-3 text-[11px]" onClick={() => setTFilter("all")} disabled={running}>すべて</Button><Button size="sm" variant={chip(tFilter === "s")} className="h-7 px-3 text-[11px]" onClick={() => setTFilter("s")} disabled={running}>Sのみ</Button></div>
         <div className="flex items-center gap-2"><span className="font-semibold">自軍凸数</span>{TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={chip(selfRank === x)} className="h-7 px-3 text-[11px]" onClick={() => setSelfRank(x)} disabled={running}>全員{x}凸</Button>)}</div>
         <div className="flex items-center gap-2"><span className="font-semibold">敵テンプレ凸数</span>{TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={chip(enemyRank === x)} className="h-7 px-3 text-[11px]" onClick={() => setEnemyRank(x)} disabled={running}>全員{x}凸</Button>)}</div>
         {running
