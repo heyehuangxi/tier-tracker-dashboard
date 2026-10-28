@@ -203,6 +203,9 @@ describe("Troops, search and tactics", () => {
       keys.add(candidateKey(q));
     }
     expect(keys.size).toBeGreaterThan(20); // 毎回ほぼ別編成になること
+    const ranked = generateRandomSquad(ALL_GENERALS, ALL_TACTICS, rand, 3);
+    expect(ranked?.ranks).toEqual([3, 3, 3]);
+    expect(ranked?.alloc?.every(a => a.reduce((x, y) => x + y, 0) === 80)).toBe(true); // 3凸 = 50+30pt
     expect(generateRandomSquad(ALL_GENERALS.slice(0, 2), ALL_TACTICS, rand)).toBeNull();
     expect(outcomeScore([10, 0, 0, 0, 0], 10)).toBe(1);
     expect(outcomeScore([0, 0, 0, 0, 10], 10)).toBe(0);
