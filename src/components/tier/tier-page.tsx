@@ -6,6 +6,7 @@ import { useLocal, KEYS } from "@/lib/use-local";
 import { generalById, normSquad, normalizeTroop, type SavedFormation, type Squad } from "@/lib/sengoku-data";
 import { TEMPLATES, TEMPLATE_RANKS, templateToSquad, runSimulation, type BattleReport, type SimResult } from "@/lib/simulator";
 import { BattleReportModal } from "@/components/tier/battle-report";
+import { GeneralFace } from "@/components/tier/general-face";
 
 const OUTCOMES = [
   { label: "勝ち", color: "text-win", swatch: "bg-win" }, { label: "優勢", color: "text-advantage", swatch: "bg-advantage" },
@@ -103,7 +104,7 @@ function TierBody({ perMatch }: { perMatch: number }) {
       {openTpl && <div className="mt-4 grid gap-3 lg:grid-cols-2">{TEMPLATES.map((t, ti) => <div key={ti} className="rounded-md border border-muted p-3">
         <p className="mb-2 text-xs font-semibold">テンプレ{ti + 1} <span className="text-muted-foreground">[{(t.label.split("]")[0] ?? "").slice(1)}]</span></p>
         <div className="space-y-2">{t.members.map((m, gi) => { const r = ranks[ti]?.[gi] ?? 0; const q = tplSquads[ti]?.squad; const al = q?.alloc?.[gi] ?? [0, 0, 0, 0]; return <div key={gi} className="text-[11px]">
-          <div className="flex flex-wrap items-center gap-2"><span className="w-8 shrink-0 text-muted-foreground">{gi === 0 ? "主将" : "副将"}</span><span className="font-semibold">{m.name}</span>
+          <div className="flex flex-wrap items-center gap-2"><span className="w-8 shrink-0 text-muted-foreground">{gi === 0 ? "主将" : "副将"}</span><GeneralFace name={m.name} className="h-9 w-7 text-[11px]" /><span className="font-semibold">{m.name}</span>
             <div className="ml-auto flex gap-1">{TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={r === x ? "default" : "outline"} className="h-6 px-2 text-[10px]" onClick={() => setRank(ti, gi, x)}>{x}凸</Button>)}</div></div>
           <p className="mt-0.5 pl-10 text-muted-foreground">{m.tactics.join("・")} ／ {m.alloc.join("+")}：{["統率", "武勇", "知略", "速度"].map((s, k) => al[k] ? `${s}+${al[k]}` : "").filter(Boolean).join(" ") || "—"}（計{50 + r * 10}pt）</p>
         </div>; })}</div>
