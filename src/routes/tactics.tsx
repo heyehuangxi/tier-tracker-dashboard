@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AppShell } from "@/components/tier/app-shell";
 import { GENERALS, TACTICS, TACTIC_KINDS } from "@/lib/sengoku-data";
+import { GeneralFace } from "@/components/tier/general-face";
 
 export const Route = createFileRoute("/tactics")({
   head: () => ({ meta: [
@@ -40,7 +41,7 @@ function TacticList() {
       {list.map(r => <article key={r.id} className="panel px-4 py-3">
         <div className="flex items-center gap-2"><span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${r.grade === "S" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{r.grade}</span><h2 className="truncate text-sm font-semibold">{r.name}</h2><span className="ml-auto text-[10px] text-muted-foreground">{r.kind}</span></div>
         <p className="mt-2 text-[11px] leading-5">{r.effect}</p>
-        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-2 text-[10px] text-muted-foreground"><dt>発動確率</dt><dd>{r.rate}</dd><dt>対応兵種</dt><dd>{r.troop}</dd><dt>{r.grade === "固有" ? "所有武将" : "伝授元"}</dt><dd>{r.owners.length ? r.owners.join("・") : "—"}</dd></dl>
+        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-2 text-[10px] text-muted-foreground"><dt>発動確率</dt><dd>{r.rate}</dd><dt>対応兵種</dt><dd>{r.troop}</dd><dt>{r.grade === "固有" ? "所有武将" : "伝授元"}</dt><dd>{r.owners.length ? <span className="flex flex-wrap items-center gap-x-2 gap-y-1">{r.owners.map(o => <span key={o} className="inline-flex items-center gap-1"><GeneralFace name={o} className="h-6 w-5 text-[8px]" />{o}</span>)}</span> : "—"}</dd></dl>
       </article>)}
     </div>
   </>;
