@@ -160,6 +160,27 @@ describe("Troops, search and tactics", () => {
     expect(keika.takenDown).toBeCloseTo(0.22);
     expect(keika.auraUntil).toBe(3);
   });
+  it("gates turn-specific tactics to their stated turn instead of firing every turn", () => {
+    const shichu = tacticById.get("t-死中求活");
+    if (!shichu) throw new Error("Missing tactic");
+    const parsed = parseTactic(shichu.name, shichu.kind, shichu.rate, shichu.effect, shichu.grade);
+    // 「5ターン目に敵全体へ兵刃ダメージ」は5ターン目（index 4）だけ
+    expect(parsed.onceTurn).toBe(4);
+    const ichinen = tacticById.get("t-一念乱志");
+    if (!ichinen) throw new Error("Missing tactic");
+    const parsed2 = parseTactic(ichinen.name, ichinen.kind, ichinen.rate, ichinen.effect, ichinen.grade);
+    // 「3ターン目以降」は3ターン目（index 2）から
+    expect(parsed2.fromTurn).toBe(2);
+  });
+  it("keeps Furinkazan squads within a sane win-rate band (flag rotation, not every-turn firing)", () => {
+    const opps = TEMPLATES.map((t, i) => ({ label: `T${i + 1}`, squad: templateToSquad(t, [0, 0, 0]) }));
+    const takeda = templateToSquad(TEMPLATES[4]!, [0, 0, 0]);
+    const r = runSimulation(takeda, opps, 50);
+    const winRate = (r.counts[0] ?? 0) / r.total;
+    // 修正前は 85.9%（全旗効果が毎ターン同時発動）。旗ローテーションでは過半数を超えない
+    expect(winRate).toBeLessThan(0.6);
+    expect(winRate).toBeGreaterThan(0.02);
+  });
   it("changes actual simulated damage when troop matchups change", () => {
     const template = TEMPLATES[0];
     if (!template) throw new Error("Missing template");
