@@ -21,13 +21,16 @@ export const Route = createFileRoute("/explore")({
   component: () => <AppShell title="AI編成探索" description="武将・戦法を無差別に組み合わせてテンプレ15部隊と連戦させ、強かった編成を探します。"><Explore /></AppShell>,
 });
 
-type Phase = "screen" | "verify";
+type Phase = "a" | "b" | "verify";
 type Entry = { squad: Squad; counts: number[]; total: number; score: number; phase: Phase };
 
-const SCREEN_PER_MATCH = 10;   // ふるい分け: 相手1部隊あたりの試行数
+const A_PER_MATCH = 3;         // 1次ふるい分け（候補101件以上のとき）: 相手1部隊あたりの試行数
+const A_KEEP = 60;             // 1次を通す件数
+const B_PER_MATCH = 10;        // 2次ふるい分け: 相手1部隊あたりの試行数
 const VERIFY_PER_MATCH = 50;   // 上位の再検証: Tier測定light と同じ試行数
-const VERIFY_TOP = 8;          // 再検証する上位件数
-const KEEP = 10;               // 表示する上位件数
+const VERIFY_TOP = 20;         // 再検証する上位件数
+const KEEP = 20;               // 表示する上位件数
+const PHASE_LABEL: Record<Phase, string> = { a: `1次ふるい分け（各${A_PER_MATCH}回）`, b: `ふるい分け（各${B_PER_MATCH}回）`, verify: `再検証済（各${VERIFY_PER_MATCH}回）` };
 
 const nextFrame = () => new Promise<void>(r => setTimeout(r, 0));
 
@@ -37,6 +40,7 @@ function Explore() {
   const [ownedT] = useOwnedList(KEYS.ownedTactics, ALL_TACTIC_IDS);
   const [count, setCount] = useState(50);
   const [pool, setPool] = useState<"all" | "owned">("all");
+  const [selfRank, setSelfRank] = useState(0);
   const [enemyRank, setEnemyRank] = useState(0);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState("");
@@ -52,43 +56,71 @@ function Explore() {
     setRunning(true); setResults([]);
     const opponents = TEMPLATES.map((t, i) => ({ label: `テンプレ${i + 1}`, squad: templateToSquad(t, [enemyRank, enemyRank, enemyRank]) }));
     const seen = new Set<string>();
-    const best: Entry[] = [];
-    const pushBest = (e: Entry) => {
-      const same = best.findIndex(x => candidateKey(x.squad) === candidateKey(e.squad));
-      if (same >= 0) { if (e.phase === "verify" || best[same]!.phase !== "verify") best[same] = e; }
-      else best.push(e);
-      best.sort((a, b) => b.score - a.score);
-      if (best.length > KEEP) best.length = KEEP;
-      setResults([...best]);
+    // 上位ボード: 同一編成は新しい段階の結果で置き換え、常にスコア順に保つ
+    const board = (limit: number) => {
+      const list: Entry[] = [];
+      return {
+        list,
+        push(e: Entry, publish: boolean) {
+          const same = list.findIndex(x => candidateKey(x.squad) === candidateKey(e.squad));
+          if (same >= 0) list[same] = e; else list.push(e);
+          list.sort((a, b) => b.score - a.score);
+          if (list.length > limit) list.length = limit;
+          if (publish) setResults(list.slice(0, KEEP));
+        },
+      };
     };
+    const sim = (q: Squad, perMatch: number, phase: Phase): Entry => { const r = runSimulation(q, opponents, perMatch); return { squad: q, counts: r.counts, total: r.total, score: outcomeScore(r.counts, r.total), phase }; };
     try {
-      // 第1段階: ランダム候補を生成して軽く連戦（ふるい分け）
-      let done = 0; let tries = 0;
-      while (done < count && tries < count * 20) {
+      // 候補プールを作る: 101件以上はまず各3回で粗くふるい分けて60件に絞る
+      let poolSquads: Squad[] = [];
+      if (count > 100) {
+        const aBoard = board(A_KEEP);
+        let done = 0; let tries = 0;
+        while (done < count && tries < count * 20) {
+          if (cancelRef.current) { setProgress("中断しました"); return; }
+          tries++;
+          const q = generateRandomSquad(gPool, tPool, Math.random, selfRank);
+          if (!q) break;
+          const key = candidateKey(q);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          aBoard.push(sim(q, A_PER_MATCH, "a"), done % 10 === 0);
+          done++;
+          if (done % 10 === 0 || done === count) { setProgress(`1次ふるい分け中… 候補 ${done}/${count}（各${A_PER_MATCH}回 × ${opponents.length}部隊）`); await nextFrame(); }
+        }
+        poolSquads = aBoard.list.map(e => e.squad);
+        setProgress(`1次ふるい分け完了: ${done}件 → ${poolSquads.length}件`);
+      } else {
+        let tries = 0;
+        while (poolSquads.length < count && tries < count * 20) {
+          tries++;
+          const q = generateRandomSquad(gPool, tPool, Math.random, selfRank);
+          if (!q) break;
+          const key = candidateKey(q);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          poolSquads.push(q);
+        }
+      }
+      if (!poolSquads.length) { setProgress("候補を生成できませんでした"); return; }
+      // ふるい分け: 各10回で連戦し、上位20件を残す
+      const bBoard = board(KEEP);
+      for (let i = 0; i < poolSquads.length; i++) {
         if (cancelRef.current) { setProgress("中断しました"); return; }
-        tries++;
-        const q = generateRandomSquad(gPool, tPool);
-        if (!q) break;
-        const key = candidateKey(q);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const r = runSimulation(q, opponents, SCREEN_PER_MATCH);
-        pushBest({ squad: q, counts: r.counts, total: r.total, score: outcomeScore(r.counts, r.total), phase: "screen" });
-        done++;
-        setProgress(`ふるい分け中… 候補 ${done}/${count}（各${SCREEN_PER_MATCH}回 × ${opponents.length}部隊）`);
+        bBoard.push(sim(poolSquads[i]!, B_PER_MATCH, "b"), true);
+        setProgress(`ふるい分け中… ${i + 1}/${poolSquads.length}（各${B_PER_MATCH}回 × ${opponents.length}部隊）`);
         await nextFrame();
       }
-      // 第2段階: 上位を Tier測定light 相当の試行数で再検証
-      const top = [...best].slice(0, VERIFY_TOP);
+      // 再検証: 上位20件を Tier測定light 相当（各50回）で測り直す
+      const top = [...bBoard.list].slice(0, VERIFY_TOP);
       for (let i = 0; i < top.length; i++) {
         if (cancelRef.current) { setProgress("中断しました（ふるい分け結果のみ表示）"); return; }
-        const e = top[i]!;
         setProgress(`再検証中… 上位 ${i + 1}/${top.length}（各${VERIFY_PER_MATCH}回 × ${opponents.length}部隊）`);
         await nextFrame();
-        const r = runSimulation(e.squad, opponents, VERIFY_PER_MATCH);
-        pushBest({ squad: e.squad, counts: r.counts, total: r.total, score: outcomeScore(r.counts, r.total), phase: "verify" });
+        bBoard.push(sim(top[i]!.squad, VERIFY_PER_MATCH, "verify"), true);
       }
-      setProgress(`完了: 候補${done}件を連戦し、上位${Math.min(VERIFY_TOP, top.length)}件を再検証しました`);
+      setProgress(`完了: 候補${count}件から上位${top.length}件を再検証しました`);
       notify("編成探索が完了しました");
     } finally { setRunning(false); }
   }
@@ -106,16 +138,17 @@ function Explore() {
   return <>
     <section className="panel px-5 py-4" aria-label="探索条件">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]">
-        <div className="flex items-center gap-2"><span className="font-semibold">候補数</span>{[20, 50, 100].map(n => <Button key={n} size="sm" variant={chip(count === n)} className="h-7 px-3 text-[11px]" onClick={() => setCount(n)} disabled={running}>{n}件</Button>)}</div>
+        <div className="flex items-center gap-2"><span className="font-semibold">候補数</span>{[20, 50, 100, 1000, 5000].map(n => <Button key={n} size="sm" variant={chip(count === n)} className="h-7 px-3 text-[11px]" onClick={() => setCount(n)} disabled={running}>{n.toLocaleString("en-US")}件</Button>)}</div>
         <div className="flex items-center gap-2"><span className="font-semibold">プール</span><Button size="sm" variant={chip(pool === "all")} className="h-7 px-3 text-[11px]" onClick={() => setPool("all")} disabled={running}>全武将・全戦法</Button><Button size="sm" variant={chip(pool === "owned")} className="h-7 px-3 text-[11px]" onClick={() => setPool("owned")} disabled={running}>所持のみ</Button></div>
+        <div className="flex items-center gap-2"><span className="font-semibold">自軍凸数</span>{TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={chip(selfRank === x)} className="h-7 px-3 text-[11px]" onClick={() => setSelfRank(x)} disabled={running}>全員{x}凸</Button>)}</div>
         <div className="flex items-center gap-2"><span className="font-semibold">敵テンプレ凸数</span>{TEMPLATE_RANKS.map(x => <Button key={x} size="sm" variant={chip(enemyRank === x)} className="h-7 px-3 text-[11px]" onClick={() => setEnemyRank(x)} disabled={running}>全員{x}凸</Button>)}</div>
         {running
           ? <Button variant="destructive" className="text-xs" onClick={() => { cancelRef.current = true; }}><OctagonX />中断</Button>
           : <Button variant="simulation" className="text-xs" onClick={run}><CirclePlay />探索開始</Button>}
       </div>
       <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
-        候補は全探索ではなくランダム抽出です。候補の武将は全員0凸・能力ポイントは各武将の最大ステータスへ全振り、コスト合計は{MAX_COST}以下、戦法は部隊兵種に対応するものを優先して付けます。
-        まず各{SCREEN_PER_MATCH}回でふるい分けし、上位{VERIFY_TOP}件を各{VERIFY_PER_MATCH}回（Tier測定light相当）で再検証します。これはシミュレーター上の試算であり、実戦データではありません。
+        候補は全探索ではなくランダム抽出です。候補の武将は全員同じ凸数（上で選択）・能力ポイントは各武将の最大ステータスへ全振り、コスト合計は{MAX_COST}以下、戦法は部隊兵種に対応するものを優先して付けます。
+        候補101件以上のときは各{A_PER_MATCH}回で1次ふるい分け（{A_KEEP}件まで）→各{B_PER_MATCH}回でふるい分け→上位{VERIFY_TOP}件を各{VERIFY_PER_MATCH}回（Tier測定light相当）で再検証します。候補が多いほど時間がかかります（1,000件で数分、5,000件で十数分が目安。端末性能によります）。これはシミュレーター上の試算であり、実戦データではありません。
       </p>
       {progress && <p className="mt-2 text-[11px] font-semibold" role="status">{progress}</p>}
     </section>
@@ -129,7 +162,7 @@ function Explore() {
           return <article key={candidateKey(e.squad)} className="rounded-md border border-muted px-3 py-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-bold text-gold">{i + 1}位</span>
-              <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${e.phase === "verify" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{e.phase === "verify" ? `再検証済（各${VERIFY_PER_MATCH}回）` : `ふるい分け（各${SCREEN_PER_MATCH}回）`}</span>
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${e.phase === "verify" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{PHASE_LABEL[e.phase]}</span>
               <span className="text-[11px] text-muted-foreground">{e.squad.troop}／コスト{squadCost(e.squad.generals)}/{MAX_COST}</span>
               <span className="ml-auto text-[11px]"><span className="text-muted-foreground">勝率</span> <strong className="tabular-nums">{win.toFixed(1)}%</strong><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">優勢以上</span> <strong className="tabular-nums">{top2.toFixed(1)}%</strong><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">スコア</span> <strong className="tabular-nums">{e.score.toFixed(3)}</strong></span>
               <Button size="sm" variant="import" className="text-[11px]" onClick={() => saveEntry(e, i + 1)}><Save />保存した編成に追加</Button>
