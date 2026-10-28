@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoexistRouteImport } from './routes/coexist'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as FreeRouteImport } from './routes/free'
 import { Route as HoldingsRouteImport } from './routes/holdings'
 import { Route as SavedRouteImport } from './routes/saved'
@@ -26,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const CoexistRoute = CoexistRouteImport.update({
   id: '/coexist',
   path: '/coexist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FreeRoute = FreeRouteImport.update({
@@ -62,6 +68,7 @@ const TierLightRoute = TierLightRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/coexist': typeof CoexistRoute
+  '/explore': typeof ExploreRoute
   '/free': typeof FreeRoute
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/coexist': typeof CoexistRoute
+  '/explore': typeof ExploreRoute
   '/free': typeof FreeRoute
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/coexist': typeof CoexistRoute
+  '/explore': typeof ExploreRoute
   '/free': typeof FreeRoute
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/coexist'
+    | '/explore'
     | '/free'
     | '/holdings'
     | '/saved'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/coexist'
+    | '/explore'
     | '/free'
     | '/holdings'
     | '/saved'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/coexist'
+    | '/explore'
     | '/free'
     | '/holdings'
     | '/saved'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CoexistRoute: typeof CoexistRoute
+  ExploreRoute: typeof ExploreRoute
   FreeRoute: typeof FreeRoute
   HoldingsRoute: typeof HoldingsRoute
   SavedRoute: typeof SavedRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/coexist'
       fullPath: '/coexist'
       preLoaderRoute: typeof CoexistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/free': {
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CoexistRoute: CoexistRoute,
+  ExploreRoute: ExploreRoute,
   FreeRoute: FreeRoute,
   HoldingsRoute: HoldingsRoute,
   SavedRoute: SavedRoute,
