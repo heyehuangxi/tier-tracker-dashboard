@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, HeartPulse, Skull, Swords } from "lucide-react";
 import type { BattleReport, LogTone } from "@/lib/simulator";
+import { GeneralFace } from "@/components/tier/general-face";
 
 const TONE_CLASS: Record<LogTone, string> = {
   ally: "br-seg-ally",
@@ -62,7 +63,7 @@ export function BattleReportModal({ report, opponentLabel, allyLabel, onClose }:
           {logs.map((l, i) => (
             <button key={i} type="button" className="br-log" data-active={i === activeIdx} onClick={() => setActiveIdx(i)}>
               <span className="br-badge">{l.tacticName ? `${l.tacticGrade ?? "S"} ${l.tacticName}` : l.kind}</span>
-              <span className={`br-avatar ${l.actorSide === "自軍" ? "br-avatar-ally" : "br-avatar-enemy"}`} aria-hidden="true">{l.actor.slice(0, 1)}</span>
+              <GeneralFace name={l.actor} className="h-[26px] w-[26px] rounded-full text-xs" fallbackClassName={l.actorSide === "自軍" ? "br-avatar-ally" : "br-avatar-enemy"} />
               <span className="br-log-main">
                 <span className="br-log-meta">
                   <strong>{l.actor}</strong>
@@ -83,7 +84,7 @@ export function BattleReportModal({ report, opponentLabel, allyLabel, onClose }:
           {report.order.map((u, i) => {
             const isActive = active && active.actor === u.name && active.actorSide === u.side;
             return <span key={`${u.side}-${u.name}`} className="br-order-item" data-active={!!isActive} title={`${u.name}（${u.side}・速度${u.speed}）`}>
-              <span className={`br-avatar ${u.side === "自軍" ? "br-avatar-ally" : "br-avatar-enemy"}`}>{u.name.slice(0, 1)}</span>
+              <GeneralFace name={u.name} className="h-[26px] w-[26px] rounded-full text-xs" fallbackClassName={u.side === "自軍" ? "br-avatar-ally" : "br-avatar-enemy"} />
               <span className="br-order-name">{i + 1}. {u.name}</span>
               {isActive && <span className="br-order-arrow" aria-hidden="true">▼</span>}
             </span>;
