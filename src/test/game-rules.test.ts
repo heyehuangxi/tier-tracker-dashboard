@@ -254,4 +254,29 @@ describe("Troops, search and tactics", () => {
     expect(decodeOwned("garbage")).toBeNull();
     expect(decodeOwned("1AAAA")).toBeNull();
   });
+  it("scopes damage buffs and reductions to the clause's target category", () => {
+    const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+    // 計略与ダメージ上昇は計略だけに効く（全ダメージに漏れない）
+    expect(P("秋水一色").typeBuffs).toContainEqual({ type: "計略", delta: 0.2 });
+    expect(P("秋水一色").dmgBuff).toBe(0);
+    // 通常攻撃与ダメージ上昇は通常攻撃だけに効く
+    expect(P("一力当先").naBuff).toBe(0.5);
+    expect(P("一力当先").dmgBuff).toBe(0);
+    // 能動戦法与ダメージ上昇・突撃被ダメージ低下はその種別だけに効く
+    expect(P("金鼓連天").kindBuffs).toContainEqual({ kind: "能動", delta: 0.48, inherentOnly: false });
+    expect(P("金鼓連天").kindTaken).toContainEqual({ kind: "突撃", delta: 0.25 });
+    expect(P("金鼓連天").takenDown).toBe(0);
+    // 固有能動戦法限定バフ
+    expect(P("奇策制勝").kindBuffs).toContainEqual({ kind: "能動", delta: 0.28, inherentOnly: true });
+  });
+  it("marks reactive (counter) tactics so they never fire proactively, and commander-sniping tactics as leader-targeted", () => {
+    const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+    for (const n of ["古今独歩", "援護射撃", "洞察反撃", "剛毅木訥", "月華鶴影", "百万一心", "耐苦鍛錬"]) expect(P(n).reactive, n).toBe(true);
+    expect(P("風林火山").reactive).toBe(false);
+    expect(P("離心の計").targetLeader).toBe(true);
+    expect(P("闇討ち").targetLeader).toBe(true);
+    // 対象数は敵側の範囲表記を優先する（自軍複数を敵の対象数に数えない）
+    expect(P("忠勤励行").targets).toBe(1);
+    expect(P("比翼連理").targets).toBe(2);
+  });
 });
