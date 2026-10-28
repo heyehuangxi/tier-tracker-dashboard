@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
 import { FactionTabs } from "@/components/tier/faction-tabs";
+import { GeneralFace } from "@/components/tier/general-face";
 import { GENERALS, TACTICS, TACTIC_KINDS, tacticTip } from "@/lib/sengoku-data";
 import { useLocal, KEYS } from "@/lib/use-local";
 
@@ -63,7 +64,9 @@ function Holdings() {
       {gr.items.length === 0 ? <p className="text-[11px] text-muted-foreground">該当なし</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {gr.items.map(x => { const on = list.includes(x.id); return <button key={x.id} type="button" className="owned-card" data-on={on} aria-pressed={on} title={x.tip || undefined} onMouseEnter={() => x.tip && setDetail(x.tip)} onClick={() => { toggle(list, setList, x.id); if (x.tip) setDetail(x.tip); }}>
           <span className="flex items-center justify-between"><span className="truncate text-[10px] text-gold">{tab === "g" ? `固有: ${x.star}` : `${x.star}戦法`}</span><span className="owned-check" aria-hidden="true">{on ? "✓" : ""}</span></span>
-          <span className="mt-1 block text-[13px] font-semibold">{x.name}</span><span className="block text-[10px] text-muted-foreground">{x.sub}</span>
+          {tab === "g"
+            ? <span className="mt-1 flex items-center gap-2"><GeneralFace name={x.name} className="h-11 w-9 text-sm" /><span className="min-w-0"><span className="block truncate text-[13px] font-semibold">{x.name}</span><span className="block text-[10px] text-muted-foreground">{x.sub}</span></span></span>
+            : <><span className="mt-1 block text-[13px] font-semibold">{x.name}</span><span className="block text-[10px] text-muted-foreground">{x.sub}</span></>}
         </button>; })}
       </div>}
     </section>)}
