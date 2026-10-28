@@ -4,10 +4,10 @@ import { CirclePlay, OctagonX, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
 import { GeneralFace } from "@/components/tier/general-face";
-import { GENERALS, TACTICS, MAX_COST, MAX_SAVED, generalById, normSquad, squadCost, tacticById, type SavedFormation, type Squad } from "@/lib/sengoku-data";
+import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, GENERALS, TACTICS, MAX_COST, MAX_SAVED, generalById, normSquad, squadCost, tacticById, type SavedFormation, type Squad } from "@/lib/sengoku-data";
 import { TEMPLATES, TEMPLATE_RANKS, runSimulation, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore } from "@/lib/explore";
-import { readLocal, useLocal, writeLocal, KEYS } from "@/lib/use-local";
+import { readLocal, useOwnedList, writeLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/explore")({
   head: () => ({ meta: [
@@ -33,8 +33,8 @@ const nextFrame = () => new Promise<void>(r => setTimeout(r, 0));
 
 function Explore() {
   const notify = useNotice();
-  const [ownedG] = useLocal<string[]>(KEYS.ownedGenerals, []);
-  const [ownedT] = useLocal<string[]>(KEYS.ownedTactics, []);
+  const [ownedG] = useOwnedList(KEYS.ownedGenerals, ALL_GENERAL_IDS);
+  const [ownedT] = useOwnedList(KEYS.ownedTactics, ALL_TACTIC_IDS);
   const [count, setCount] = useState(50);
   const [pool, setPool] = useState<"all" | "owned">("all");
   const [enemyRank, setEnemyRank] = useState(0);
