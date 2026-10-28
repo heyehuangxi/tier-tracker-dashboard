@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Copy, Link2, Save, Search } from "lucide-react";
+import { Copy, Download, Link2, Save, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
 import { FactionTabs } from "@/components/tier/faction-tabs";
 import { GeneralFace } from "@/components/tier/general-face";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, FACTIONS, GENERALS, TACTICS, TACTIC_KINDS, decodeOwned, encodeOwned, tacticTip } from "@/lib/sengoku-data";
+import { parseSnapshotId, type ResolvedOwned } from "@/lib/snapshot";
 import { useOwnedList, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/holdings")({
@@ -30,6 +31,24 @@ function Holdings() {
   useEffect(() => { if (readyG) setG(savedG); }, [readyG, savedG]);
   useEffect(() => { if (readyT) setT(savedT); }, [readyT, savedT]);
   const [linkUrl, setLinkUrl] = useState("");
+  const [gameLink, setGameLink] = useState("");
+  const [importing, setImporting] = useState(false);
+  async function importFromGame() {
+    const id = parseSnapshotId(gameLink);
+    if (!id) return notify("ゲーム内共有リンクの形式が読み取れませんでした。共有リンク全体を貼り付けてください。");
+    setImporting(true);
+    try {
+      const res = await fetch(`/api/snapshot?snapshot_id=${encodeURIComponent(id)}`);
+      const data = (await res.json()) as ResolvedOwned & { error?: string };
+      if (!res.ok || data.error) return notify(data.error ?? "読み込みに失敗しました。");
+      setSavedG(data.generals); setSavedT(data.tactics); setG(data.generals); setT(data.tactics);
+      const missed = [...data.unresolvedGenerals, ...data.unresolvedTactics];
+      notify(missed.length
+        ? `ゲームリンクから設定しました（武将${data.generals.length}・戦法${data.tactics.length}）。読み取れなかったもの: ${missed.join("、")}`
+        : `ゲームリンクから所持状況を設定しました（武将${data.generals.length}・戦法${data.tactics.length}）。`);
+    } catch { notify("読み込みに失敗しました。通信環境を確認して再度お試しください。"); }
+    finally { setImporting(false); }
+  }
   const appliedLink = useRef(false);
   // 読み込みリンク（?o=）が付いていたら、所持状況へ自動設定する
   useEffect(() => {
@@ -63,6 +82,13 @@ function Holdings() {
   const list = tab === "g" ? g : t; const setList = tab === "g" ? setG : setT;
 
   return <>
+    <section className="panel flex flex-col gap-2 px-4 py-3 sm:px-5" aria-label="ゲーム内共有リンクから読み込む">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input value={gameLink} onChange={e => setGameLink(e.target.value)} placeholder="ゲーム内共有リンクを貼り付け（戦備庫の共有リンク）" className="h-9 flex-1 text-xs" aria-label="ゲーム内共有リンク" />
+        <Button variant="simulation" className="text-xs" disabled={importing} onClick={importFromGame}><Download />{importing ? "読み込み中…" : "リンクから所持を設定"}</Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">ゲームの戦備庫で発行した共有リンクを貼ると、所持武将・戦法をそのまま読み込んで設定します（現在の設定は上書きされます）。</p>
+    </section>
     <section className="panel flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center">
       <div className="flex gap-1 rounded-md bg-muted p-1" role="tablist">
         {([["g", `武将 (${g.length}/${GENERALS.length})`], ["t", `戦法 (${t.length}/${TACTICS.length})`]] as const).map(([k, l]) => <Button key={k} role="tab" aria-selected={tab === k} size="sm" variant="ghost" className={`text-xs ${tab === k ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => { setTab(k); setFilter("all"); setQ(""); setGrade("all"); setDetail(null); }}>{l}</Button>)}
