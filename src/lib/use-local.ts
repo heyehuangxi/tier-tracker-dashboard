@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const EVT = "sri-local-change";
 
@@ -23,6 +23,22 @@ export function useLocal<T>(key: string, fallback: T) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   const set = useCallback((v: T) => { setValue(v); writeLocal(key, v); }, [key]);
+  return [value, set, ready] as const;
+}
+
+/**
+ * 所持リスト用フック。キーがまだ保存されていない初回だけ、全所持（allIds）を初期値として保存する。
+ * 既に保存済みの値（空リストを含む）には一切触れない。
+ */
+export function useOwnedList(key: string, allIds: string[]) {
+  const [value, set, ready] = useLocal<string[]>(key, []);
+  const done = useRef(false);
+  useEffect(() => {
+    if (!ready || done.current) return;
+    done.current = true;
+    if (localStorage.getItem(key) === null) set(allIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
   return [value, set, ready] as const;
 }
 
