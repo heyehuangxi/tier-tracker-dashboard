@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
 import { FactionTabs } from "@/components/tier/faction-tabs";
 import { GeneralFace } from "@/components/tier/general-face";
-import { GENERALS, TACTICS, TACTIC_KINDS, tacticTip } from "@/lib/sengoku-data";
-import { useLocal, KEYS } from "@/lib/use-local";
+import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, FACTIONS, GENERALS, TACTICS, TACTIC_KINDS, tacticTip } from "@/lib/sengoku-data";
+import { useOwnedList, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/holdings")({
   head: () => ({ meta: [
@@ -18,17 +18,17 @@ export const Route = createFileRoute("/holdings")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
-  component: () => <AppShell title="所持管理" description="所持している武将・戦法を選び、保存してください。"><Holdings /></AppShell>,
+  component: () => <AppShell title="所持管理" description="最初は全員・全戦法が所持扱いです。持っていないものだけ外して保存してください。"><Holdings /></AppShell>,
 });
 
 function Holdings() {
   const notify = useNotice();
-  const [savedG, setSavedG, readyG] = useLocal<string[]>(KEYS.ownedGenerals, []);
-  const [savedT, setSavedT, readyT] = useLocal<string[]>(KEYS.ownedTactics, []);
+  const [savedG, setSavedG, readyG] = useOwnedList(KEYS.ownedGenerals, ALL_GENERAL_IDS);
+  const [savedT, setSavedT, readyT] = useOwnedList(KEYS.ownedTactics, ALL_TACTIC_IDS);
   const [g, setG] = useState<string[]>([]);
   const [t, setT] = useState<string[]>([]);
-  useEffect(() => { if (readyG) setG(savedG); }, [readyG]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (readyT) setT(savedT); }, [readyT]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (readyG) setG(savedG); }, [readyG, savedG]);
+  useEffect(() => { if (readyT) setT(savedT); }, [readyT, savedT]);
   const [tab, setTab] = useState<"g" | "t">("g");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
@@ -57,6 +57,25 @@ function Holdings() {
       <Button variant="simulation" className="text-xs" onClick={() => { setSavedG(g); setSavedT(t); notify(`所持状況を保存しました（武将${g.length}・戦法${t.length}）。`); }}><Save />所持状況を保存{dirty && " *"}</Button>
     </section>
     {tab === "g" ? <FactionTabs value={fac} onChange={setFac} /> : <div className="flex gap-1">{[["all", "すべて"], ["S", "S戦法"], ["A", "A戦法"]].map(([k, l]) => <Button key={k} size="sm" variant="ghost" className={`h-7 text-[11px] ${grade === k ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setGrade(k!)}>{l}</Button>)}</div>}
+    <section className="panel flex flex-col gap-2 px-4 py-3 sm:px-5" aria-label="まとめて操作">
+      {tab === "g" ? <>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
+          <span className="font-semibold">勢力まとめて</span>
+          {FACTIONS.map(f => { const ids = GENERALS.filter(x => x.faction === f).map(x => x.id); return <span key={f} className="inline-flex items-center gap-1"><span className="text-muted-foreground">{f}</span><Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setG(prev => [...new Set([...prev, ...ids])])}>全選択</Button><Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setG(prev => prev.filter(id => !ids.includes(id)))}>全解除</Button></span>; })}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="font-semibold">武将ぜんぶ</span>
+          <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setG([...ALL_GENERAL_IDS])}>全選択</Button>
+          <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setG([])}>全解除</Button>
+          <span className="text-muted-foreground">勢力の一括操作は、検索・絞り込みに関係なくその勢力の全員が対象です。外し忘れの確認には上のフィルタ「未所持のみ」が便利です。</span>
+        </div>
+      </> : <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="font-semibold">戦法ぜんぶ</span>
+        <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setT([...ALL_TACTIC_IDS])}>全選択</Button>
+        <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={() => setT([])}>全解除</Button>
+        <span className="text-muted-foreground">検索・絞り込みに関係なく、全戦法が対象です。</span>
+      </div>}
+    </section>
     {tab === "t" && detail && <section className="panel whitespace-pre-line px-5 py-3 text-[11px] leading-5">{detail}</section>}
     {groups.map(gr => <section key={gr.title} className="panel px-4 py-4 sm:px-5">
       <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">{gr.title}<span className="ml-2 text-[11px] font-normal text-muted-foreground">{gr.items.length}件</span></h2>
