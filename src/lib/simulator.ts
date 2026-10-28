@@ -75,7 +75,7 @@ export function weaponBase(atkWu: number, defTong: number, troops: number, multi
 type DmgKind = "兵刃" | "計略";
 type StatModSpec = { idx: number; amount: number };
 type DotSpec = { kind: string; rate: number; type: DmgKind };
-type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; dots: DotSpec[]; dotChance: number; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number };
+type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; dots: DotSpec[]; dotChance: number; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined };
 export type { TSpec };
 const maxPct = (re: RegExp, e: string) => { const m = e.match(re); return m ? Number(m[m.length - 1]) : 0; };
 const STAT_IDX: Record<string, number> = { 統率: 0, 武勇: 1, 知略: 2, 速度: 3 };
@@ -133,7 +133,12 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const teppekiChance = teppekiMatch?.[2] ? Number(teppekiMatch[2]) / 100 : teppeki && /確率/.test(e) ? (innerM ? Number(innerM[1]) / 100 : 1) : 1;
   const auraM = e.match(/(\d+)ターン目(?:終了)?まで/);
   const auraUntil = auraM ? Number(auraM[1]) - 1 : 99;
-  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets: /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff: name === "軍神" ? 0 : maxPct(/与ダメージが?(?:[\d.]+%[〜→])?([\d.]+)%(?:（[^）]*）)?(?:上昇|増加)/, e) / 100, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade, takenDown, dots, dotChance, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu };
+  // 「Nターン目に〜」はそのターンだけの効果、「Nターン目以降/から〜」はそのターンから有効（指揮・受動の毎ターン発動と区別する）
+  const onceMatches = [...e.matchAll(/(\d+)ターン目に/g)];
+  const onceTurn = onceMatches.length === 1 ? Number(onceMatches[0]![1]) - 1 : undefined;
+  const fromM = e.match(/(\d+)ターン目(?:以降|から)/);
+  const fromTurn = fromM ? Number(fromM[1]) - 1 : undefined;
+  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets: /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff: name === "軍神" ? 0 : maxPct(/与ダメージが?(?:[\d.]+%[〜→])?([\d.]+)%(?:（[^）]*）)?(?:上昇|増加)/, e) / 100, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade, takenDown, dots, dotChance, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu, onceTurn, fromTurn };
 }
 
 type Status = { rate: number; until: number };
@@ -162,9 +167,13 @@ function buildUnits(q: Squad): Unit[] {
         if (boost) for (const d of spec.dmg) d.rate = Math.round(d.rate * (1 + Number(boost[1]) / 100));
         if (/攻撃対象数が3名に固定/.test(inh.leader)) spec.targets = 3;
       }
+      // 風林火山は汎用パースでは全旗効果が毎ターン同時発動になってしまうため、専用処理（2ターンごとの旗ローテーション）に委ねる
+      if (inh.name === "風林火山") { spec.dmg = []; spec.dmgBuff = 0; spec.takenDown = 0; }
       specs.unshift(spec);
     }
     const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: MAX_TROOPS, max: MAX_TROOPS, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0, ranbuMods: [], sui: inh?.name === "伊達の粋" ? 5 : 0, suiBoosts: 0, suiHitsB: 0, suiHitsS: 0, hasSui: inh?.name === "伊達の粋", ikkiActive: false, ikkiChance: 0.3, hasIkki: inh?.name === "一切皆空", traits: g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : [], traitSet: new Set(g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : []), typeDmgMods: [], typeTakenMods: [], critDmgMods: [], bonusCrit: { b: 0, s: 0, dmgB: 0, dmgS: 0 }, shieldNext: 0, ctrlResists: [], naEvade: 0, targetWeight: 1, tacticTargetWeight: 1, wasHitTurn: -1, dealtTurn: -1, nextDmg: { delta: 0, left: 0 }, actProbMods: [], counters: {}, naDmgBonus: 0 };
+    // 風林火山: 戦闘開始時の旗は自身の最も高い属性で決まる（速度=風0・知略=林1・武勇=火2・統率=山3）
+    if (inh?.name === "風林火山") { const toFlag = [3, 2, 1, 0]; let best = 0; st.forEach((v, k) => { if (v > (st[best] ?? 0)) best = k; }); u.counters["furin"] = toFlag[best]!; }
     // 受動・指揮・兵種の付与系（休養・離反・心攻など）は戦闘開始から常時
     for (const s of specs) if (s.prob >= 1 && s.kind !== "突撃" && s.kind !== "能動") for (const [k, v] of Object.entries(s.grant)) if (k !== "回生") u.status[k as keyof Unit["status"]] = { rate: v!, until: 99 };
     return u;
@@ -588,8 +597,9 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
         }
       }
       // 指揮・受動は毎ターンの行動時に判定する（反応型の効果もこの枠で近似）。発動率は提供データの列を使用し、効果文中の確率があれば併せる
-      else if ((s.kind === "指揮" || s.kind === "受動") && (s.dmg.length || s.heal)) { if (Math.random() < Math.min(1, s.prob * (s.inner || 1))) fire(u, s, own, foe, mine, turn); }
-      else if (s.kind !== "能動" && s.kind !== "突撃" && s.heal && Math.random() < s.inner) fire(u, { ...s, dmg: [] }, own, foe, mine, turn);
+      // ただし「Nターン目に」限定の効果はそのターンだけ、「Nターン目以降/から」の効果はそのターンからだけ発動する
+      else if ((s.kind === "指揮" || s.kind === "受動") && (s.dmg.length || s.heal)) { if ((s.onceTurn === undefined || turn === s.onceTurn) && (s.fromTurn === undefined || turn >= s.fromTurn) && Math.random() < Math.min(1, s.prob * (s.inner || 1))) fire(u, s, own, foe, mine, turn); }
+      else if (s.kind !== "能動" && s.kind !== "突撃" && s.heal && (s.onceTurn === undefined || turn === s.onceTurn) && (s.fromTurn === undefined || turn >= s.fromTurn) && Math.random() < s.inner) fire(u, { ...s, dmg: [] }, own, foe, mine, turn);
     }
     // 通常攻撃の対象: 挑発・牽制が有効ならその付与者に固定、それ以外はランダム
     const target = u.taunt && turn <= u.taunt.until && u.taunt.src.troops > 0 ? u.taunt.src : wpick(alive(foe), 1, x => x.targetWeight)[0]; if (!target) return;
@@ -639,6 +649,21 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     for (const u of [...A, ...B]) if (u.traitSet.has("材徳兼備") && u.troops > 0) {
       const squad = u.side === "自軍" ? A : B;
       for (const ally of squad) if (ally !== u && ally.troops > 0 && (ally.counters["zaideki"] ?? 0) < 2 && Math.random() < 0.4) { ally.counters["zaideki"] = (ally.counters["zaideki"] ?? 0) + 1; ally.nextDmg = { delta: 0.28, left: ally.nextDmg.left + 1 }; }
+    }
+    // 風林火山: 2ターンごとに旗が 風→林→火→山 の順で切り替わり、その旗の効果だけが発動する（開始旗は所持者の最高属性）
+    if (turn % 2 === 0) for (const [own, foe, mine] of [[A, B, true], [B, A, false]] as const) for (const u of own) {
+      const start = u.counters["furin"];
+      if (start === undefined || u.troops <= 0) continue;
+      const flag = Number((start + turn / 2) % 4);
+      const flagName = ["風", "林", "火", "山"][flag]!;
+      if (flag === 0) for (const ally of own) if (ally.troops > 0) ally.typeDmgMods.push({ type: "兵刃", delta: 0.22, until: turn + 1 });
+      if (flag === 3) for (const ally of own) if (ally.troops > 0) ally.typeTakenMods.push({ type: "兵刃", delta: -0.22, until: turn + 1 });
+      if (flag === 1 || flag === 2) {
+        // 林: 敵複数（2〜3名）に計略92% / 火: 敵単体〜複数（1〜2名）に兵刃156%。大将時は対象数が増える確率が25%上昇
+        const n = (flag === 1 ? 2 : 1) + (Math.random() < (u.isLeader ? 0.75 : 0.5) ? 1 : 0);
+        for (const t of pick(alive(foe), n)) damage(u, t, flag === 1 ? "計略" : "兵刃", flag === 1 ? 92 : 156, mine, turn, { label: "風林火山", grade: "S", kind: "指揮" });
+      }
+      if (collectLog) logs.push({ turn: turn + 1, kind: "戦法", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), tacticName: "風林火山", tacticGrade: "S", tacticKind: "指揮", effects: [`旗・${flagName}`], segments: [seg(u), { text: ` の `, tone: "plain" }, { text: "風林火山", tone: "effect" }, { text: `（旗・${flagName}）`, tone: "plain" }] });
     }
     // 毎ターン、残り全員の最終速度と先攻を再判定して最速の1名ずつ行動させる（ターン中のバフ・デバフ・制御も次判定に反映）
     const remaining = [...A.map(u => ({ u, mine: true })), ...B.map(u => ({ u, mine: false }))].filter(x => x.u.troops > 0);
