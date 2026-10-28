@@ -2,8 +2,8 @@ import { MAX_COST, pointsFor, TROOP_TYPES, type General, type Squad, type Tactic
 
 /**
  * ランダム編成探索（要望4: 無差別に組んで連戦させ、強かった編成を探す）。
- * 全探索ではなくランダム抽出。候補は全員0凸で固定し、能力ポイントは各武将の最大ステータスへ全振りする
- * （テンプレ側も0凸時は得意ステータスへ50pt配分されるため、条件を揃える）。
+ * 全探索ではなくランダム抽出。候補の凸数は全員同じ（0/1/3/5）で、能力ポイントは各武将の最大ステータスへ全振りする
+ * （テンプレ側も得意ステータスへ配分されるため、条件を揃える）。
  */
 
 const pick = <T,>(arr: readonly T[], rand: () => number): T => arr[Math.floor(rand() * arr.length)]!;
@@ -22,12 +22,12 @@ export function tacticTroopCompatible(t: Tactic, troop: TroopType): boolean {
   return false;
 }
 
-/** 0凸分の能力ポイントを最大ステータスへ全振りした配分 */
-export function allocForGeneral(g: General): number[] {
+/** 指定凸数分の能力ポイントを最大ステータスへ全振りした配分 */
+export function allocForGeneral(g: General, rank = 0): number[] {
   const out = [0, 0, 0, 0];
   let best = 0;
   g.stats.forEach((v, i) => { if (v > (g.stats[best] ?? 0)) best = i; });
-  out[best] = pointsFor(0);
+  out[best] = pointsFor(rank);
   return out;
 }
 
@@ -36,7 +36,7 @@ export function allocForGeneral(g: General): number[] {
  * 伝授戦法6つ（重複なし、対応兵種に合うものを優先）・兵種はランダム。
  * プール不足やコスト超過が続く場合は null を返す。
  */
-export function generateRandomSquad(generals: readonly General[], tactics: readonly Tactic[], rand: () => number = Math.random): Squad | null {
+export function generateRandomSquad(generals: readonly General[], tactics: readonly Tactic[], rand: () => number = Math.random, rank = 0): Squad | null {
   if (generals.length < 3 || tactics.length < 6) return null;
   for (let attempt = 0; attempt < 200; attempt++) {
     const picked = shuffled(generals, rand).slice(0, 3);
@@ -50,8 +50,8 @@ export function generateRandomSquad(generals: readonly General[], tactics: reado
       troop,
       generals: picked.map(g => g.id),
       tactics: chosen.map(t => t.id),
-      ranks: [0, 0, 0],
-      alloc: picked.map(allocForGeneral),
+      ranks: [rank, rank, rank],
+      alloc: picked.map(g => allocForGeneral(g, rank)),
     };
   }
   return null;
