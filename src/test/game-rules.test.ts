@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
-import { GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
+import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
@@ -211,5 +211,12 @@ describe("Troops, search and tactics", () => {
     expect(tacticTroopCompatible({ ...anyTactic, troop: "全兵種" }, "騎兵")).toBe(true);
     expect(tacticTroopCompatible({ ...anyTactic, troop: "騎馬" }, "騎兵")).toBe(true);
     expect(tacticTroopCompatible({ ...anyTactic, troop: "弓兵" }, "騎兵")).toBe(false);
+  });
+  it("provides all-id lists for the owned-by-default holdings initialisation", () => {
+    expect(ALL_GENERAL_IDS).toHaveLength(ALL_GENERALS.length);
+    expect(new Set(ALL_GENERAL_IDS).size).toBe(ALL_GENERALS.length);
+    expect(ALL_TACTIC_IDS).toHaveLength(ALL_TACTICS.length);
+    expect(new Set(ALL_TACTIC_IDS).size).toBe(ALL_TACTICS.length);
+    expect(ALL_GENERAL_IDS.every(id => ALL_GENERALS.some(g => g.id === id))).toBe(true);
   });
 });
