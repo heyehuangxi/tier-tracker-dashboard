@@ -20,6 +20,9 @@ export const GENERALS: General[] = (MASTER as M[]).map(x => ({ id: `g-${x.n}`, n
 type TM = { n: string; g: "S" | "A"; k: string; r: string; t: string; e: string };
 export const TACTICS: Tactic[] = (TACTICS_MASTER as TM[]).map(x => ({ id: `t-${x.n}`, name: x.n, grade: x.g, kind: x.k, rate: x.r, troop: x.t, effect: x.e }));
 export const TACTIC_KINDS = [...new Set(TACTICS.map(x => x.kind))];
+/** 所持管理の初期値用: 全武将・全戦法のID（初回は全所持から未所持を外す方式） */
+export const ALL_GENERAL_IDS = GENERALS.map(g => g.id);
+export const ALL_TACTIC_IDS = TACTICS.map(t => t.id);
 export const tacticTip = (x: Tactic) => `${x.name}［${x.grade}・${x.kind}］\n発動確率: ${x.rate}\n対応兵種: ${x.troop}\n効果: ${x.effect}`;
 
 // 顔写真: SLGSIM（https://slgsim.com/generals）の武将画像を外部参照する。対応表は portrait-master.json（武将名→画像ファイル名）。
