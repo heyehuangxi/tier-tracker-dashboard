@@ -102,6 +102,25 @@ export function decodeFormation(s: string): (Formation & { name?: string }) | nu
   } catch { return null; }
 }
 
+// 所持リストの読み込みリンク: マスター順のビットセットを base64url 化する（?o= パラメータ用）。
+// ゲーム内共有リンクは CORS のためサイトから直接読めないので、変換済みIDリストをこの形式で受け渡す。
+const b64urlEncodeBytes = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64urlDecodeBytes = (s: string): Uint8Array | null => { try { return Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)); } catch { return null; } };
+const bitsOfIds = (ids: string[], all: readonly { id: string }[]) => { const bytes = new Uint8Array(Math.ceil(all.length / 8)); all.forEach((x, i) => { if (ids.includes(x.id)) bytes[i >> 3] = (bytes[i >> 3] ?? 0) | (1 << (i & 7)); }); return bytes; };
+const idsFromBits = (bytes: Uint8Array, all: readonly { id: string }[]) => all.filter((_, i) => (i >> 3) < bytes.length && (((bytes[i >> 3] ?? 0) >> (i & 7)) & 1) === 1).map(x => x.id);
+export function encodeOwned(g: string[], t: string[]): string {
+  const gb = bitsOfIds(g, GENERALS); const tb = bitsOfIds(t, TACTICS);
+  const all = new Uint8Array(gb.length + tb.length); all.set(gb); all.set(tb, gb.length);
+  return "1" + b64urlEncodeBytes(all);
+}
+export function decodeOwned(s: string): { g: string[]; t: string[] } | null {
+  if (!s.startsWith("1")) return null;
+  const bytes = b64urlDecodeBytes(s.slice(1));
+  const gl = Math.ceil(GENERALS.length / 8); const tl = Math.ceil(TACTICS.length / 8);
+  if (!bytes || bytes.length !== gl + tl) return null;
+  return { g: idsFromBits(bytes.slice(0, gl), GENERALS), t: idsFromBits(bytes.slice(gl), TACTICS) };
+}
+
 // 部隊ルール
 export const MAX_COST = 20;
 export const FACTION_BONUS = 0.07;
