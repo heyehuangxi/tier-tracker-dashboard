@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
+import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { matchesName } from "@/components/tier/search-select";
 
@@ -169,5 +169,17 @@ describe("Troops, search and tactics", () => {
       expect(favorable.total).toBe(10);
       expect(favorable.metrics[8]).toBeGreaterThan(unfavorable.metrics[8] ?? 0);
     } finally { random.mockRestore(); }
+  });
+  it("resolves general portrait URLs from the SLGSIM mapping", () => {
+    expect(portraitUrlForName("織田信長")).toBe("https://slgsim.com/images/hero/zhitianxinchang.png");
+    expect(portraitUrlForName("竹中半兵衛")).toBe("https://slgsim.com/images/hero/zhuzhongbanbingwei.png");
+    // マスター表記（瑞溪院）は先方の表記（瑞渓院）に吸収される
+    expect(portraitUrlForName("瑞溪院")).toBe("https://slgsim.com/images/hero/ruixiyuan.png");
+    // 先方に画像がない武将と未登録の名前は undefined（UIは頭文字アイコンにフォールバック）
+    expect(portraitUrlForName("松平信康")).toBeUndefined();
+    expect(portraitUrlForName("存在しない武将")).toBeUndefined();
+    // マスター武将の大半に写真が引けること
+    const covered = GENERALS.filter(g => portraitUrlForName(g.name)).length;
+    expect(covered).toBeGreaterThanOrEqual(130);
   });
 });
