@@ -18,6 +18,7 @@ import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as TacticsRouteImport } from './routes/tactics'
 import { Route as TierLightRouteImport } from './routes/tier-light'
+import { Route as ApiSnapshotRouteImport } from './routes/api/snapshot'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const TierLightRoute = TierLightRouteImport.update({
   path: '/tier-light',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSnapshotRoute = ApiSnapshotRouteImport.update({
+  id: '/api/snapshot',
+  path: '/api/snapshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
   '/tier-light': typeof TierLightRoute
+  '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
   '/tier-light': typeof TierLightRoute
+  '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
   '/tier-light': typeof TierLightRoute
+  '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/tactics'
     | '/tier-light'
+    | '/api/snapshot'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/tactics'
     | '/tier-light'
+    | '/api/snapshot'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/tactics'
     | '/tier-light'
+    | '/api/snapshot'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   ShareRoute: typeof ShareRoute
   TacticsRoute: typeof TacticsRoute
   TierLightRoute: typeof TierLightRoute
+  ApiSnapshotRoute: typeof ApiSnapshotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TierLightRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/snapshot': {
+      id: '/api/snapshot'
+      path: '/api/snapshot'
+      fullPath: '/api/snapshot'
+      preLoaderRoute: typeof ApiSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareRoute: ShareRoute,
   TacticsRoute: TacticsRoute,
   TierLightRoute: TierLightRoute,
+  ApiSnapshotRoute: ApiSnapshotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
