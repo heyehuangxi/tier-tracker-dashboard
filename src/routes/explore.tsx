@@ -26,6 +26,7 @@ type Entry = { squad: Squad; counts: number[]; total: number; score: number; pha
 
 const A_PER_MATCH = 3;         // 1次ふるい分け（候補101件以上のとき）: 相手1部隊あたりの試行数
 const A_KEEP = 60;             // 1次を通す件数
+const A_KEEP_LARGE = 120;      // 候補1万件以上のときの1次通過件数（粗い試行での取りこぼし対策）
 const B_PER_MATCH = 10;        // 2次ふるい分け: 相手1部隊あたりの試行数
 const VERIFY_PER_MATCH = 50;   // 上位の再検証: Tier測定light と同じ試行数
 const VERIFY_TOP = 20;         // 再検証する上位件数
@@ -76,10 +77,10 @@ function Explore() {
     };
     const sim = (q: Squad, perMatch: number, phase: Phase): Entry => { const r = runSimulation(q, opponents, perMatch); return { squad: q, counts: r.counts, total: r.total, score: outcomeScore(r.counts, r.total), phase }; };
     try {
-      // 候補プールを作る: 101件以上はまず各3回で粗くふるい分けて60件に絞る
+      // 候補プールを作る: 101件以上はまず各3回で粗くふるい分ける（1万件以上は通過枠を広げて取りこぼしを減らす）
       let poolSquads: Squad[] = [];
       if (count > 100) {
-        const aBoard = board(A_KEEP);
+        const aBoard = board(count >= 10000 ? A_KEEP_LARGE : A_KEEP);
         let done = 0; let tries = 0;
         while (done < count && tries < count * 20) {
           if (cancelRef.current) { setProgress("中断しました"); return; }
@@ -142,7 +143,7 @@ function Explore() {
   return <>
     <section className="panel px-5 py-4" aria-label="探索条件">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]">
-        <div className="flex items-center gap-2"><span className="font-semibold">候補数</span>{[20, 50, 100, 1000, 5000].map(n => <Button key={n} size="sm" variant={chip(count === n)} className="h-7 px-3 text-[11px]" onClick={() => setCount(n)} disabled={running}>{n.toLocaleString("en-US")}件</Button>)}</div>
+        <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">候補数</span>{[20, 50, 100, 1000, 5000, 10000, 20000, 50000].map(n => <Button key={n} size="sm" variant={chip(count === n)} className="h-7 px-3 text-[11px]" onClick={() => setCount(n)} disabled={running}>{n.toLocaleString("en-US")}件</Button>)}</div>
         <div className="flex items-center gap-2"><span className="font-semibold">プール</span><Button size="sm" variant={chip(pool === "all")} className="h-7 px-3 text-[11px]" onClick={() => setPool("all")} disabled={running}>全武将・全戦法</Button><Button size="sm" variant={chip(pool === "owned")} className="h-7 px-3 text-[11px]" onClick={() => setPool("owned")} disabled={running}>所持のみ</Button></div>
         <div className="flex items-center gap-2"><span className="font-semibold">武将</span><Button size="sm" variant={chip(gFilter === "all")} className="h-7 px-3 text-[11px]" onClick={() => setGFilter("all")} disabled={running}>すべて</Button><Button size="sm" variant={chip(gFilter === "r5")} className="h-7 px-3 text-[11px]" onClick={() => setGFilter("r5")} disabled={running}>星5のみ</Button></div>
         <div className="flex items-center gap-2"><span className="font-semibold">戦法</span><Button size="sm" variant={chip(tFilter === "all")} className="h-7 px-3 text-[11px]" onClick={() => setTFilter("all")} disabled={running}>すべて</Button><Button size="sm" variant={chip(tFilter === "s")} className="h-7 px-3 text-[11px]" onClick={() => setTFilter("s")} disabled={running}>Sのみ</Button></div>
@@ -154,7 +155,7 @@ function Explore() {
       </div>
       <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
         候補は全探索ではなくランダム抽出です。候補の武将は全員同じ凸数（上で選択）・能力ポイントは各武将の最大ステータスへ全振り、コスト合計は{MAX_COST}以下、戦法は部隊兵種に対応するものを優先して付けます。
-        候補101件以上のときは各{A_PER_MATCH}回で1次ふるい分け（{A_KEEP}件まで）→各{B_PER_MATCH}回でふるい分け→上位{VERIFY_TOP}件を各{VERIFY_PER_MATCH}回（Tier測定light相当）で再検証します。候補が多いほど時間がかかります（1,000件で数分、5,000件で十数分が目安。端末性能によります）。これはシミュレーター上の試算であり、実戦データではありません。
+        候補101件以上のときは各{A_PER_MATCH}回で1次ふるい分け→各{B_PER_MATCH}回でふるい分け→上位{VERIFY_TOP}件を各{VERIFY_PER_MATCH}回（Tier測定light相当）で再検証します（1次通過は通常{A_KEEP}件、候補1万件以上では{A_KEEP_LARGE}件）。候補が多いほど時間がかかります（1,000件で数分、5,000件で十数分、1万件で30分前後、5万件では数時間が目安。端末性能によります）。長時間の探索中はこのページを開いたままにしてください。これはシミュレーター上の試算であり、実戦データではありません。
       </p>
       {progress && <p className="mt-2 text-[11px] font-semibold" role="status">{progress}</p>}
     </section>
