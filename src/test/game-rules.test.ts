@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
+import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
+import { GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
@@ -181,5 +183,33 @@ describe("Troops, search and tactics", () => {
     // マスター武将の大半に写真が引けること
     const covered = GENERALS.filter(g => portraitUrlForName(g.name)).length;
     expect(covered).toBeGreaterThanOrEqual(130);
+  });
+  it("generates valid random squads for exploration within the cost cap", () => {
+    let seed = 42;
+    const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const keys = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      const q = generateRandomSquad(ALL_GENERALS, ALL_TACTICS, rand);
+      expect(q).not.toBeNull();
+      if (!q) break;
+      const gs = q.generals.filter(Boolean);
+      expect(gs).toHaveLength(3);
+      expect(new Set(gs).size).toBe(3);
+      expect(gs.reduce((a, id) => a + (ALL_GENERALS.find(g => g.id === id)?.cost ?? 99), 0)).toBeLessThanOrEqual(MAX_COST);
+      const ts = q.tactics.filter(Boolean);
+      expect(ts).toHaveLength(6);
+      expect(new Set(ts).size).toBe(6);
+      expect(q.ranks).toEqual([0, 0, 0]);
+      keys.add(candidateKey(q));
+    }
+    expect(keys.size).toBeGreaterThan(20); // 毎回ほぼ別編成になること
+    expect(generateRandomSquad(ALL_GENERALS.slice(0, 2), ALL_TACTICS, rand)).toBeNull();
+    expect(outcomeScore([10, 0, 0, 0, 0], 10)).toBe(1);
+    expect(outcomeScore([0, 0, 0, 0, 10], 10)).toBe(0);
+    expect(outcomeScore([0, 0, 10, 0, 0], 10)).toBe(0.5);
+    const anyTactic = ALL_TACTICS[0]!;
+    expect(tacticTroopCompatible({ ...anyTactic, troop: "全兵種" }, "騎兵")).toBe(true);
+    expect(tacticTroopCompatible({ ...anyTactic, troop: "騎馬" }, "騎兵")).toBe(true);
+    expect(tacticTroopCompatible({ ...anyTactic, troop: "弓兵" }, "騎兵")).toBe(false);
   });
 });
