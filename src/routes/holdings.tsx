@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Save, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Copy, Link2, Save, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppShell, useNotice } from "@/components/tier/app-shell";
 import { FactionTabs } from "@/components/tier/faction-tabs";
 import { GeneralFace } from "@/components/tier/general-face";
-import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, FACTIONS, GENERALS, TACTICS, TACTIC_KINDS, tacticTip } from "@/lib/sengoku-data";
+import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, FACTIONS, GENERALS, TACTICS, TACTIC_KINDS, decodeOwned, encodeOwned, tacticTip } from "@/lib/sengoku-data";
 import { useOwnedList, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/holdings")({
@@ -29,6 +29,21 @@ function Holdings() {
   const [t, setT] = useState<string[]>([]);
   useEffect(() => { if (readyG) setG(savedG); }, [readyG, savedG]);
   useEffect(() => { if (readyT) setT(savedT); }, [readyT, savedT]);
+  const [linkUrl, setLinkUrl] = useState("");
+  const appliedLink = useRef(false);
+  // 読み込みリンク（?o=）が付いていたら、所持状況へ自動設定する
+  useEffect(() => {
+    if (appliedLink.current || !readyG || !readyT) return;
+    const o = new URLSearchParams(window.location.search).get("o");
+    if (!o) { appliedLink.current = true; return; }
+    appliedLink.current = true;
+    const decoded = decodeOwned(o);
+    window.history.replaceState(null, "", window.location.pathname);
+    if (!decoded) { notify("所持リンクの形式が正しくありませんでした。"); return; }
+    setSavedG(decoded.g); setSavedT(decoded.t); setG(decoded.g); setT(decoded.t);
+    notify(`リンクから所持状況を設定しました（武将${decoded.g.length}・戦法${decoded.t.length}）。`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readyG, readyT]);
   const [tab, setTab] = useState<"g" | "t">("g");
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
@@ -55,7 +70,9 @@ function Holdings() {
       <div className="relative flex-1"><Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" /><Input value={q} onChange={e => setQ(e.target.value)} placeholder={tab === "g" ? "武将名・勢力・固有戦法で検索" : "戦法名・種類で検索"} className="h-9 pl-8 text-xs" /></div>
       <select className="slot-select h-9 md:w-36" value={filter} onChange={e => setFilter(e.target.value)} aria-label="フィルタ"><option value="all">すべて</option><option value="owned">所持のみ</option><option value="unowned">未所持のみ</option>{types.map(x => <option key={x} value={x}>{x}</option>)}</select>
       <Button variant="simulation" className="text-xs" onClick={() => { setSavedG(g); setSavedT(t); notify(`所持状況を保存しました（武将${g.length}・戦法${t.length}）。`); }}><Save />所持状況を保存{dirty && " *"}</Button>
+      <Button variant="import" className="text-xs" onClick={() => { const url = `${window.location.origin}/holdings?o=${encodeOwned(g, t)}`; setLinkUrl(url); navigator.clipboard?.writeText(url).then(() => notify("所持リンクをコピーしました。開くと今の選択がそのまま設定されます。"), () => notify("所持リンクを発行しました。")); }}><Link2 />所持リンクを発行</Button>
     </section>
+    {linkUrl && <section className="panel flex items-center gap-2 px-4 py-3"><Input readOnly value={linkUrl} className="h-8 flex-1 text-[11px]" onFocus={e => e.currentTarget.select()} /><Button size="sm" variant="ghost" onClick={() => { navigator.clipboard?.writeText(linkUrl); notify("コピーしました。"); }}><Copy />コピー</Button></section>}
     {tab === "g" ? <FactionTabs value={fac} onChange={setFac} /> : <div className="flex gap-1">{[["all", "すべて"], ["S", "S戦法"], ["A", "A戦法"]].map(([k, l]) => <Button key={k} size="sm" variant="ghost" className={`h-7 text-[11px] ${grade === k ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`} onClick={() => setGrade(k!)}>{l}</Button>)}</div>}
     <section className="panel flex flex-col gap-2 px-4 py-3 sm:px-5" aria-label="まとめて操作">
       {tab === "g" ? <>
