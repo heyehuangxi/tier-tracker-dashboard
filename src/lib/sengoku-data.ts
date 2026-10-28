@@ -1,5 +1,6 @@
 // 武将：提供マスターデータ（名将・良将）／戦法：提供マスターデータ（S・A）
 import MASTER from "./generals-master.json";
+import PORTRAIT_MASTER from "./portrait-master.json";
 import TACTICS_MASTER from "./tactics-master.json";
 import INHERENT_MASTER from "./inherent-master.json";
 import TRAITS_MASTER from "./traits-master.json";
@@ -20,6 +21,17 @@ type TM = { n: string; g: "S" | "A"; k: string; r: string; t: string; e: string 
 export const TACTICS: Tactic[] = (TACTICS_MASTER as TM[]).map(x => ({ id: `t-${x.n}`, name: x.n, grade: x.g, kind: x.k, rate: x.r, troop: x.t, effect: x.e }));
 export const TACTIC_KINDS = [...new Set(TACTICS.map(x => x.kind))];
 export const tacticTip = (x: Tactic) => `${x.name}［${x.grade}・${x.kind}］\n発動確率: ${x.rate}\n対応兵種: ${x.troop}\n効果: ${x.effect}`;
+
+// 顔写真: SLGSIM（https://slgsim.com/generals）の武将画像を外部参照する。対応表は portrait-master.json（武将名→画像ファイル名）。
+// 先方に画像自体がない武将（松平信康・伊達輝宗・鬼庭左月斎）と、先方の一覧にいない武将は undefined（UI側で頭文字アイコンにフォールバック）。
+const PORTRAIT_FILES = PORTRAIT_MASTER as Record<string, string>;
+/** マスター側の表記ゆれ吸収（瑞溪院は先方の表記が瑞渓院） */
+const PORTRAIT_ALIASES: Record<string, string> = { "瑞溪院": "瑞渓院" };
+export const portraitUrlForName = (name: string): string | undefined => {
+  const file = PORTRAIT_FILES[name] ?? PORTRAIT_FILES[PORTRAIT_ALIASES[name] ?? ""];
+  return file ? `https://slgsim.com/images/hero/${file}.png` : undefined;
+};
+export const portraitUrlForGeneral = (g: General): string | undefined => portraitUrlForName(g.name);
 
 export const generalById = new Map(GENERALS.map(x => [x.id, x]));
 export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
