@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 
-type Item = { label: string; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" | "/tactics" | "/tier-light" | "/explore" };
+type Item = { label: string; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" | "/tactics" | "/tier-light" | "/explore" | "/generals" | "/traits" };
 const items: Item[] = [
-  { label: "Tier測定", badge: "NEW", to: "/" },
-  { label: "Tier測定light", badge: "NEW", to: "/tier-light" },
+  { label: "勝率測定", badge: "NEW", to: "/" },
+  { label: "勝率測定light", badge: "NEW", to: "/tier-light" },
   { label: "AI編成探索", badge: "NEW", to: "/explore" },
   { label: "共存編成", to: "/coexist" },
   { label: "自由編成", to: "/free" },
@@ -12,9 +12,9 @@ const items: Item[] = [
   { label: "共有", to: "/share" },
   { label: "戦法一覧", to: "/tactics" },
   { label: "模擬対戦", badge: "NEW" },
-  { label: "武将データベース" },
+  { label: "武将一覧", to: "/generals" },
   { label: "属性値ランキング" },
-  { label: "特性一覧" },
+  { label: "特性一覧", to: "/traits" },
 ];
 
 /** 上部ナビゲーション（横並び）。準備中項目は onSelect で通知する。 */
