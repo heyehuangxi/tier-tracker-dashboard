@@ -82,7 +82,7 @@ function Holdings() {
   const list = tab === "g" ? g : t; const setList = tab === "g" ? setG : setT;
 
   return <>
-    <section className="panel flex flex-col gap-2 px-4 py-3 sm:px-5" aria-label="ゲーム内共有リンクから読み込む">
+    <section className="panel panel-accent flex flex-col gap-2 px-4 py-3 sm:px-5" aria-label="ゲーム内共有リンクから読み込む">
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input value={gameLink} onChange={e => setGameLink(e.target.value)} placeholder="ゲーム内共有リンクを貼り付け（戦備庫の共有リンク）" className="h-9 flex-1 text-xs" aria-label="ゲーム内共有リンク" />
         <Button variant="simulation" className="text-xs" disabled={importing} onClick={importFromGame}><Download />{importing ? "読み込み中…" : "リンクから所持を設定"}</Button>
