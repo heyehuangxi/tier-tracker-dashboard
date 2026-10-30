@@ -52,19 +52,19 @@
 }
 :root {
   color-scheme: light;
-  --background: oklch(0.955 0.014 84);
-  --foreground: oklch(0.245 0.018 62);
+  --background: oklch(0.938 0.016 84);
+  --foreground: oklch(0.22 0.018 62);
   --card: oklch(0.995 0.004 84);
   --primary: oklch(0.52 0.185 30);
   --primary-foreground: oklch(0.99 0.005 84);
-  --secondary: oklch(0.928 0.013 80);
-  --muted: oklch(0.928 0.013 80);
-  --muted-foreground: oklch(0.47 0.02 66);
-  --accent: oklch(0.937 0.03 38);
-  --border: oklch(0.79 0.018 72 / 0.85);
-  --gold: oklch(0.58 0.105 72);
+  --secondary: oklch(0.9 0.014 80);
+  --muted: oklch(0.9 0.014 80);
+  --muted-foreground: oklch(0.395 0.022 64);
+  --accent: oklch(0.925 0.034 38);
+  --border: oklch(0.64 0.02 70);
+  --gold: oklch(0.49 0.11 70);
   --tier: var(--primary);
-  --track: oklch(0.9 0.012 80);
+  --track: oklch(0.85 0.014 80);
   --win: oklch(0.5 0.118 158);
   --advantage: oklch(0.49 0.108 248);
   --draw: oklch(0.58 0.098 78);
@@ -81,7 +81,7 @@
   --user-foreground: oklch(0.42 0.068 240);
   --destructive: oklch(0.49 0.185 25);
   --primary-deep: oklch(0.44 0.165 28);
-  --panel-shadow: 0 1px 2px oklch(0.3 0.02 60 / 0.05), 0 10px 30px -12px oklch(0.3 0.02 60 / 0.12);
+  --panel-shadow: 0 1px 3px oklch(0.3 0.02 60 / 0.09), 0 12px 32px -12px oklch(0.3 0.02 60 / 0.2);
   --accent-gradient: linear-gradient(125deg, var(--primary) 0%, oklch(0.56 0.168 40) 100%);
   --action-shadow: 0 4px 14px -4px oklch(0.52 0.185 30 / 0.45);
 }
@@ -110,7 +110,7 @@
   background: var(--card);
   box-shadow: var(--panel-shadow);
 }
-.panel h2 { font-family: var(--font-display); letter-spacing: 0.03em; }
+.panel h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: 0.03em; }
 .panel-accent { border-top: 3px solid var(--primary); }
 
 /* 朱の角印（ブランドマーク） */
@@ -129,7 +129,7 @@
   position: relative;
   display: inline-flex; align-items: center; gap: 6px;
   padding: 10px 2px; margin-right: 22px;
-  font-size: 12.5px; color: var(--muted-foreground); white-space: nowrap;
+  font-size: 13px; color: var(--muted-foreground); white-space: nowrap;
   transition: color 150ms;
 }
 .topnav-link:hover { color: var(--foreground); }
