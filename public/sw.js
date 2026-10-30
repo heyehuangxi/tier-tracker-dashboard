@@ -2,7 +2,7 @@
 // 方針: ハッシュ付き静的アセットはキャッシュ優先、ページ遷移はネットワーク優先
 // （オフライン時のみトップページのキャッシュを返す）。データ取得やサーバー関数は
 // 一切キャッシュしない。
-const CACHE = "pien-v1";
+const CACHE = "pien-v2";
 const PRECACHE = ["/", "/manifest.webmanifest", "/favicon.ico", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
