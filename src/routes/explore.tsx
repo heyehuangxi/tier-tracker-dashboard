@@ -141,7 +141,7 @@ function Explore() {
 
   const chip = (active: boolean) => active ? "default" as const : "outline" as const;
   return <>
-    <section className="panel px-5 py-4" aria-label="探索条件">
+    <section className="panel panel-accent px-5 py-4" aria-label="探索条件">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]">
         <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">候補数</span>{[20, 50, 100, 1000, 5000, 10000, 20000, 50000].map(n => <Button key={n} size="sm" variant={chip(count === n)} className="h-7 px-3 text-[11px]" onClick={() => setCount(n)} disabled={running}>{n.toLocaleString("en-US")}件</Button>)}</div>
         <div className="flex items-center gap-2"><span className="font-semibold">プール</span><Button size="sm" variant={chip(pool === "all")} className="h-7 px-3 text-[11px]" onClick={() => setPool("all")} disabled={running}>全武将・全戦法</Button><Button size="sm" variant={chip(pool === "owned")} className="h-7 px-3 text-[11px]" onClick={() => setPool("owned")} disabled={running}>所持のみ</Button></div>
@@ -166,9 +166,9 @@ function Explore() {
         {results.map((e, i) => {
           const win = e.total ? (e.counts[0] ?? 0) / e.total * 100 : 0;
           const top2 = e.total ? ((e.counts[0] ?? 0) + (e.counts[1] ?? 0)) / e.total * 100 : 0;
-          return <article key={candidateKey(e.squad)} className="rounded-md border border-muted px-3 py-3">
+          return <article key={candidateKey(e.squad)} className="rounded border border-border bg-background/60 px-3 py-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-bold text-gold">{i + 1}位</span>
+              <span className="font-display text-xl font-bold text-primary">{i + 1}位</span>
               <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${e.phase === "verify" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{PHASE_LABEL[e.phase]}</span>
               <span className="text-[11px] text-muted-foreground">{e.squad.troop}／コスト{squadCost(e.squad.generals)}/{MAX_COST}</span>
               <span className="ml-auto text-[11px]"><span className="text-muted-foreground">勝率</span> <strong className="tabular-nums">{win.toFixed(1)}%</strong><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">優勢以上</span> <strong className="tabular-nums">{top2.toFixed(1)}%</strong><span className="mx-2 text-muted-foreground">·</span><span className="text-muted-foreground">スコア</span> <strong className="tabular-nums">{e.score.toFixed(3)}</strong></span>
