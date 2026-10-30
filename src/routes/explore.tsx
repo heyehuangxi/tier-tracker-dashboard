@@ -28,7 +28,7 @@ const A_PER_MATCH = 3;         // 1次ふるい分け（候補101件以上のと
 const A_KEEP = 60;             // 1次を通す件数
 const A_KEEP_LARGE = 120;      // 候補1万件以上のときの1次通過件数（粗い試行での取りこぼし対策）
 const B_PER_MATCH = 10;        // 2次ふるい分け: 相手1部隊あたりの試行数
-const VERIFY_PER_MATCH = 50;   // 上位の再検証: Tier測定light と同じ試行数
+const VERIFY_PER_MATCH = 50;   // 上位の再検証: 勝率測定light と同じ試行数
 const VERIFY_TOP = 20;         // 再検証する上位件数
 const KEEP = 20;               // 表示する上位件数
 const PHASE_LABEL: Record<Phase, string> = { a: `1次ふるい分け（各${A_PER_MATCH}回）`, b: `ふるい分け（各${B_PER_MATCH}回）`, verify: `再検証済（各${VERIFY_PER_MATCH}回）` };
@@ -117,7 +117,7 @@ function Explore() {
         setProgress(`ふるい分け中… ${i + 1}/${poolSquads.length}（各${B_PER_MATCH}回 × ${opponents.length}部隊）`);
         await nextFrame();
       }
-      // 再検証: 上位20件を Tier測定light 相当（各50回）で測り直す
+      // 再検証: 上位20件を 勝率測定light 相当（各50回）で測り直す
       const top = [...bBoard.list].slice(0, VERIFY_TOP);
       for (let i = 0; i < top.length; i++) {
         if (cancelRef.current) { setProgress("中断しました（ふるい分け結果のみ表示）"); return; }
@@ -155,7 +155,7 @@ function Explore() {
       </div>
       <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
         候補は全探索ではなくランダム抽出です。候補の武将は全員同じ凸数（上で選択）・能力ポイントは各武将の最大ステータスへ全振り、コスト合計は{MAX_COST}以下、戦法は部隊兵種に対応するものを優先して付けます。
-        候補101件以上のときは各{A_PER_MATCH}回で1次ふるい分け→各{B_PER_MATCH}回でふるい分け→上位{VERIFY_TOP}件を各{VERIFY_PER_MATCH}回（Tier測定light相当）で再検証します（1次通過は通常{A_KEEP}件、候補1万件以上では{A_KEEP_LARGE}件）。候補が多いほど時間がかかります（1,000件で数分、5,000件で十数分、1万件で30分前後、5万件では数時間が目安。端末性能によります）。長時間の探索中はこのページを開いたままにしてください。これはシミュレーター上の試算であり、実戦データではありません。
+        候補101件以上のときは各{A_PER_MATCH}回で1次ふるい分け→各{B_PER_MATCH}回でふるい分け→上位{VERIFY_TOP}件を各{VERIFY_PER_MATCH}回（勝率測定light相当）で再検証します（1次通過は通常{A_KEEP}件、候補1万件以上では{A_KEEP_LARGE}件）。候補が多いほど時間がかかります（1,000件で数分、5,000件で十数分、1万件で30分前後、5万件では数時間が目安。端末性能によります）。長時間の探索中はこのページを開いたままにしてください。これはシミュレーター上の試算であり、実戦データではありません。
       </p>
       {progress && <p className="mt-2 text-[11px] font-semibold" role="status">{progress}</p>}
     </section>
