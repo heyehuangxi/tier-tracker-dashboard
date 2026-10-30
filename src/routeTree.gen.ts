@@ -13,11 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CoexistRouteImport } from './routes/coexist'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as FreeRouteImport } from './routes/free'
+import { Route as GeneralsRouteImport } from './routes/generals'
 import { Route as HoldingsRouteImport } from './routes/holdings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as TacticsRouteImport } from './routes/tactics'
 import { Route as TierLightRouteImport } from './routes/tier-light'
+import { Route as TraitsRouteImport } from './routes/traits'
 import { Route as ApiSnapshotRouteImport } from './routes/api/snapshot'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,6 +40,11 @@ const ExploreRoute = ExploreRouteImport.update({
 const FreeRoute = FreeRouteImport.update({
   id: '/free',
   path: '/free',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GeneralsRoute = GeneralsRouteImport.update({
+  id: '/generals',
+  path: '/generals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HoldingsRoute = HoldingsRouteImport.update({
@@ -65,6 +72,11 @@ const TierLightRoute = TierLightRouteImport.update({
   path: '/tier-light',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TraitsRoute = TraitsRouteImport.update({
+  id: '/traits',
+  path: '/traits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSnapshotRoute = ApiSnapshotRouteImport.update({
   id: '/api/snapshot',
   path: '/api/snapshot',
@@ -76,11 +88,13 @@ export interface FileRoutesByFullPath {
   '/coexist': typeof CoexistRoute
   '/explore': typeof ExploreRoute
   '/free': typeof FreeRoute
+  '/generals': typeof GeneralsRoute
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
   '/tier-light': typeof TierLightRoute
+  '/traits': typeof TraitsRoute
   '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRoutesByTo {
@@ -88,11 +102,13 @@ export interface FileRoutesByTo {
   '/coexist': typeof CoexistRoute
   '/explore': typeof ExploreRoute
   '/free': typeof FreeRoute
+  '/generals': typeof GeneralsRoute
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
   '/tier-light': typeof TierLightRoute
+  '/traits': typeof TraitsRoute
   '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRoutesById {
@@ -101,11 +117,13 @@ export interface FileRoutesById {
   '/coexist': typeof CoexistRoute
   '/explore': typeof ExploreRoute
   '/free': typeof FreeRoute
+  '/generals': typeof GeneralsRoute
   '/holdings': typeof HoldingsRoute
   '/saved': typeof SavedRoute
   '/share': typeof ShareRoute
   '/tactics': typeof TacticsRoute
   '/tier-light': typeof TierLightRoute
+  '/traits': typeof TraitsRoute
   '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRouteTypes {
@@ -115,11 +133,13 @@ export interface FileRouteTypes {
     | '/coexist'
     | '/explore'
     | '/free'
+    | '/generals'
     | '/holdings'
     | '/saved'
     | '/share'
     | '/tactics'
     | '/tier-light'
+    | '/traits'
     | '/api/snapshot'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,11 +147,13 @@ export interface FileRouteTypes {
     | '/coexist'
     | '/explore'
     | '/free'
+    | '/generals'
     | '/holdings'
     | '/saved'
     | '/share'
     | '/tactics'
     | '/tier-light'
+    | '/traits'
     | '/api/snapshot'
   id:
     | '__root__'
@@ -139,11 +161,13 @@ export interface FileRouteTypes {
     | '/coexist'
     | '/explore'
     | '/free'
+    | '/generals'
     | '/holdings'
     | '/saved'
     | '/share'
     | '/tactics'
     | '/tier-light'
+    | '/traits'
     | '/api/snapshot'
   fileRoutesById: FileRoutesById
 }
@@ -152,11 +176,13 @@ export interface RootRouteChildren {
   CoexistRoute: typeof CoexistRoute
   ExploreRoute: typeof ExploreRoute
   FreeRoute: typeof FreeRoute
+  GeneralsRoute: typeof GeneralsRoute
   HoldingsRoute: typeof HoldingsRoute
   SavedRoute: typeof SavedRoute
   ShareRoute: typeof ShareRoute
   TacticsRoute: typeof TacticsRoute
   TierLightRoute: typeof TierLightRoute
+  TraitsRoute: typeof TraitsRoute
   ApiSnapshotRoute: typeof ApiSnapshotRoute
 }
 
@@ -188,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/free'
       fullPath: '/free'
       preLoaderRoute: typeof FreeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/generals': {
+      id: '/generals'
+      path: '/generals'
+      fullPath: '/generals'
+      preLoaderRoute: typeof GeneralsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/holdings': {
@@ -225,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TierLightRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/traits': {
+      id: '/traits'
+      path: '/traits'
+      fullPath: '/traits'
+      preLoaderRoute: typeof TraitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/snapshot': {
       id: '/api/snapshot'
       path: '/api/snapshot'
@@ -240,11 +280,13 @@ const rootRouteChildren: RootRouteChildren = {
   CoexistRoute: CoexistRoute,
   ExploreRoute: ExploreRoute,
   FreeRoute: FreeRoute,
+  GeneralsRoute: GeneralsRoute,
   HoldingsRoute: HoldingsRoute,
   SavedRoute: SavedRoute,
   ShareRoute: ShareRoute,
   TacticsRoute: TacticsRoute,
   TierLightRoute: TierLightRoute,
+  TraitsRoute: TraitsRoute,
   ApiSnapshotRoute: ApiSnapshotRoute,
 }
 export const routeTree = rootRouteImport
