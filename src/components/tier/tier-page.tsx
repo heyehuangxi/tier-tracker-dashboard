@@ -15,11 +15,11 @@ const OUTCOMES = [
 ];
 const squadName = (q: Squad) => q.generals.map(id => (id ? generalById.get(id)?.name : "空き") ?? "空き").join("・");
 
-export function TierPage({ title, perMatch }: { title: string; perMatch: number }) {
-  return <AppShell title={title} description={`テンプレート${TEMPLATES.length}部隊＋保存した編成と各${perMatch}回、最大8ターンで戦闘を試算します。`}><TierBody perMatch={perMatch} /></AppShell>;
+export function WinRatePage({ title, perMatch }: { title: string; perMatch: number }) {
+  return <AppShell title={title} description={`テンプレート${TEMPLATES.length}部隊＋保存した編成と各${perMatch}回、最大8ターンで戦闘を試算します。`}><WinRateBody perMatch={perMatch} /></AppShell>;
 }
 
-function TierBody({ perMatch }: { perMatch: number }) {
+function WinRateBody({ perMatch }: { perMatch: number }) {
   const notice = useNotice();
   const [saved] = useLocal<SavedFormation[]>(KEYS.saved, []);
   const [ranks, setRanks] = useLocal<number[][]>("sri-template-ranks", TEMPLATES.map(() => [0, 0, 0]));
