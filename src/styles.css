@@ -2,9 +2,13 @@
 @source "../src";
 @import "tw-animate-css";
 
+/*
+  ぴえんで候 デザインシステム v2 —「和紙と墨と朱」
+  生成りの和紙に墨文字、差し色は朱と金。明朝見出し＋罫線のエディトリアル構成。
+*/
 @theme inline {
   --font-sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-  --font-display: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --font-display: "Shippori Mincho B1", "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -41,116 +45,171 @@
   --color-user-foreground: var(--user-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--primary-foreground);
-  --radius-md: 4px;
-  --radius-lg: 8px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 5px;
+  --radius-xl: 8px;
 }
 :root {
-  color-scheme: dark;
-  --background: oklch(0.165 0.004 260);
-  --foreground: oklch(0.94 0.006 260);
-  --card: oklch(0.235 0.006 260);
-  --primary: oklch(0.8 0.123 170);
-  --primary-foreground: oklch(0.2 0.027 170);
-  --secondary: oklch(0.3 0.009 260);
-  --muted: oklch(0.285 0.006 260);
-  --muted-foreground: oklch(0.72 0.011 260);
-  --accent: oklch(0.32 0.027 170);
-  --border: oklch(0.42 0.009 260 / 0.65);
-  --gold: oklch(0.82 0.095 85);
-  --tier: oklch(0.8 0.123 170);
-  --track: oklch(0.3 0.006 260);
-  --win: oklch(0.8 0.123 170);
-  --advantage: oklch(0.76 0.104 230);
-  --draw: oklch(0.82 0.095 85);
-  --disadvantage: oklch(0.73 0.125 50);
-  --loss: oklch(0.72 0.15 15);
-  --output: oklch(0.672 0.117 235);
-  --burst: oklch(0.635 0.128 231);
-  --penetration: oklch(0.688 0.174 31);
-  --control: oklch(0.582 0.222 31);
-  --stability: oklch(0.622 0.238 30);
-  --points: oklch(0.56 0.124 65);
-  --sidebar: oklch(0.195 0.005 260);
-  --user: oklch(0.3 0.018 230);
-  --user-foreground: oklch(0.8 0.09 230);
-  --destructive: oklch(0.74 0.15 15);
-  --primary-glow: oklch(0.76 0.09 210);
-  --glass-highlight: oklch(0.95 0.01 260 / 0.06);
-  --panel-shadow: 0 8px 24px oklch(0.1 0.004 260 / 0.18), inset 0 1px 0 var(--glass-highlight);
-  --accent-gradient: linear-gradient(120deg, var(--primary), var(--primary-glow));
-  --glass-gradient: linear-gradient(135deg, var(--glass-highlight), transparent 60%);
-  --action-shadow: 0 3px 16px oklch(0.8 0.123 170 / 0.12);
+  color-scheme: light;
+  --background: oklch(0.955 0.014 84);
+  --foreground: oklch(0.245 0.018 62);
+  --card: oklch(0.995 0.004 84);
+  --primary: oklch(0.52 0.185 30);
+  --primary-foreground: oklch(0.99 0.005 84);
+  --secondary: oklch(0.928 0.013 80);
+  --muted: oklch(0.928 0.013 80);
+  --muted-foreground: oklch(0.47 0.02 66);
+  --accent: oklch(0.937 0.03 38);
+  --border: oklch(0.79 0.018 72 / 0.85);
+  --gold: oklch(0.58 0.105 72);
+  --tier: var(--primary);
+  --track: oklch(0.9 0.012 80);
+  --win: oklch(0.5 0.118 158);
+  --advantage: oklch(0.49 0.108 248);
+  --draw: oklch(0.58 0.098 78);
+  --disadvantage: oklch(0.56 0.132 48);
+  --loss: oklch(0.49 0.182 24);
+  --output: oklch(0.49 0.108 240);
+  --burst: oklch(0.51 0.118 235);
+  --penetration: oklch(0.54 0.148 35);
+  --control: oklch(0.47 0.168 28);
+  --stability: oklch(0.49 0.168 28);
+  --points: oklch(0.51 0.098 65);
+  --sidebar: var(--card);
+  --user: oklch(0.9 0.018 230);
+  --user-foreground: oklch(0.42 0.068 240);
+  --destructive: oklch(0.49 0.185 25);
+  --primary-deep: oklch(0.44 0.165 28);
+  --panel-shadow: 0 1px 2px oklch(0.3 0.02 60 / 0.05), 0 10px 30px -12px oklch(0.3 0.02 60 / 0.12);
+  --accent-gradient: linear-gradient(125deg, var(--primary) 0%, oklch(0.56 0.168 40) 100%);
+  --action-shadow: 0 4px 14px -4px oklch(0.52 0.185 30 / 0.45);
 }
 @layer base {
   * { border-color: var(--border); }
-  body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); font-size: 14px; letter-spacing: 0; }
+  body {
+    margin: 0;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    letter-spacing: 0;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(56rem 30rem at 110% -10%, oklch(0.58 0.105 72 / 0.07), transparent 60%),
+      radial-gradient(48rem 26rem at -10% 0%, oklch(0.52 0.185 30 / 0.05), transparent 55%);
+    background-attachment: fixed;
+  }
   button, a { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: var(--primary); color: var(--primary-foreground); }
 }
-.app-sidebar { width: 232px; background: var(--sidebar); border-right: 1px solid var(--muted); transition: width 180ms ease, transform 180ms ease; }
-.app-sidebar.collapsed { width: 68px; }
-.app-main { margin-left: 232px; transition: margin-left 180ms ease; }
-.app-main.collapsed { margin-left: 68px; }
-.brand-mark { width: 36px; height: 36px; border: 1px solid var(--primary); border-radius: 50%; color: var(--primary-foreground); background: var(--accent-gradient); box-shadow: var(--action-shadow); font-family: var(--font-display); font-weight: 700; display: grid; place-items: center; font-size: 23px; }
-.panel { border: 1px solid var(--border); border-radius: 8px; background: var(--glass-gradient), color-mix(in oklab, var(--card) 82%, transparent); backdrop-filter: blur(18px); box-shadow: var(--panel-shadow); }
+
+/* 紙のカード： 二重罫の見出しを持つエディトリアルな面 */
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  box-shadow: var(--panel-shadow);
+}
+.panel h2 { font-family: var(--font-display); letter-spacing: 0.03em; }
+.panel-accent { border-top: 3px solid var(--primary); }
+
+/* 朱の角印（ブランドマーク） */
+.brand-seal {
+  width: 42px; height: 42px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--accent-gradient);
+  color: var(--primary-foreground);
+  font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1;
+  border-radius: 4px;
+  box-shadow: var(--action-shadow), inset 0 0 0 2px oklch(0.99 0.005 84 / 0.35);
+}
+
+/* 上部ナビゲーション */
+.topnav-link {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 2px; margin-right: 22px;
+  font-size: 12.5px; color: var(--muted-foreground); white-space: nowrap;
+  transition: color 150ms;
+}
+.topnav-link:hover { color: var(--foreground); }
+.topnav-link[data-active="true"] { color: var(--foreground); font-weight: 700; }
+.topnav-link[data-active="true"]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--primary);
+}
+.topnav-link .new-badge { margin-left: 0; }
+.mobilenav-link {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; font-size: 13px; color: var(--muted-foreground); border-radius: 4px; text-align: left;
+}
+.mobilenav-link[data-active="true"] { color: var(--primary); font-weight: 700; background: var(--accent); }
+.new-badge { font-size: 9px; letter-spacing: 0.08em; border-radius: 2px; background: var(--primary); color: var(--primary-foreground); padding: 2px 5px; font-weight: 700; margin-left: auto; }
+
+/* ページ見出し帯： 新聞の題字のように太罫＋細罫で区切る */
+.page-hero { border-bottom: 3px double var(--foreground); }
+.v-text { writing-mode: vertical-rl; letter-spacing: 0.35em; }
+
+/* 実行ボタン（朱のグラデーション） */
 .button-simulation { background: var(--accent-gradient); box-shadow: var(--action-shadow); }
-.button-simulation:hover { filter: brightness(1.08); }
+.button-simulation:hover { filter: brightness(1.06); }
+
 .search-popover { width: max(260px, var(--radix-popover-trigger-width)); max-width: calc(100vw - 32px); }
-.nav-item { width: 100%; justify-content: flex-start; height: 39px; padding: 0 12px; gap: 10px; color: var(--muted-foreground); font-weight: 400; border-radius: 6px; }
-.nav-item[data-active="true"] { background: var(--accent); color: var(--primary); font-weight: 600; box-shadow: inset 2px 0 0 var(--primary); }
-.nav-item[data-active="true"] svg { color: var(--primary); }
-.new-badge { font-size: 9px; border-radius: 12px; background: var(--muted); color: var(--muted-foreground); padding: 3px 6px; font-weight: 400; margin-left: auto; }
+
+/* 測定バー */
 .metric-bar { height: 22px; width: 100%; display: block; }
 .metric-bar .track { fill: var(--track); }
 .metric-bar .fill { fill: currentColor; transition: width 700ms ease; }
 .metric-row { display: grid; grid-template-columns: 96px minmax(0,1fr) 44px; align-items: center; gap: 10px; min-height: 39px; }
-.result-bar { height: 24px; width: 100%; display: block; }
-.page-title::before { content: ""; display: block; width: 3px; height: 23px; background: var(--accent-gradient); border-radius: 2px; }
-@media (min-width: 1450px) { .content-wrap { max-width: 1240px; margin-inline: auto; } }
+.result-bar { height: 30px; width: 100%; display: block; }
+.winrate-num { font-family: var(--font-display); font-weight: 800; line-height: 0.95; letter-spacing: -0.01em; }
+
+.content-wrap { max-width: 1180px; margin-inline: auto; }
 @media (max-width: 767px) {
-  .app-sidebar, .app-sidebar.collapsed { width: 232px; transform: translateX(-100%); box-shadow: var(--panel-shadow); }
-  .app-sidebar.mobile-open { transform: translateX(0); }
-  .app-main, .app-main.collapsed { margin-left: 0; }
   .metric-row { grid-template-columns: 74px minmax(0,1fr) 32px; gap: 8px; min-height: 35px; }
   .metric-bar { height: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
-.slot-select { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); color: var(--foreground); font-size: 12px; padding: 0 8px; cursor: pointer; }
-.slot-select:hover { border-color: var(--gold); }
-.slot-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-.owned-card { text-align: left; border: 1px solid var(--border); border-radius: 6px; background: var(--card); padding: 8px 10px; transition: border-color 150ms, background 150ms, transform 150ms; cursor: pointer; }
-.owned-card:hover { border-color: var(--gold); transform: translateY(-1px); }
-.owned-card[data-on="true"] { background: var(--accent); border-color: var(--gold); }
-.owned-check { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 3px; display: grid; place-items: center; font-size: 10px; color: var(--primary-foreground); }
-.owned-card[data-on="true"] .owned-check { background: var(--gold); border-color: var(--gold); }
-.mode-badge { font-size: 9px; border-radius: 12px; background: var(--muted); color: var(--muted-foreground); padding: 2px 6px; }
-.inherent-field { margin-top: 6px; height: 34px; display: flex; flex-direction: column; justify-content: center; padding: 0 8px; border: 1px dashed var(--border); border-radius: 4px; background: var(--muted); font-size: 12px; color: var(--foreground); cursor: not-allowed; line-height: 1.2; }
 
-/* 詳細戦報（ゲーム内再現型ログ） */
-.br-overlay { position: fixed; inset: 0; z-index: 60; background: oklch(0.08 0.004 260 / 0.72); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; }
-.br-modal { width: min(920px, 100%); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; overflow: hidden; background: var(--card); }
-.br-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
-.br-close { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--muted-foreground); cursor: pointer; }
-.br-close:hover { color: var(--foreground); border-color: var(--gold); }
-.br-outcome { font-size: 10px; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--border); }
+.slot-select { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 3px; background: var(--card); color: var(--foreground); font-size: 12px; padding: 0 8px; cursor: pointer; }
+.slot-select:hover { border-color: var(--primary); }
+.slot-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* 所持カード： 選ぶと朱の枠と生成りの地に変わる */
+.owned-card { text-align: left; border: 1px solid var(--border); border-radius: 5px; background: var(--card); padding: 8px 10px; transition: border-color 150ms, background 150ms, transform 150ms, box-shadow 150ms; cursor: pointer; }
+.owned-card:hover { border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--panel-shadow); }
+.owned-card[data-on="true"] { background: var(--accent); border-color: var(--primary); }
+.owned-check { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 2px; display: grid; place-items: center; font-size: 10px; color: var(--primary-foreground); background: var(--card); }
+.owned-card[data-on="true"] .owned-check { background: var(--primary); border-color: var(--primary); }
+.mode-badge { font-size: 9px; letter-spacing: 0.06em; border-radius: 2px; background: var(--accent); color: var(--primary); padding: 2px 6px; font-weight: 700; }
+.inherent-field { margin-top: 6px; height: 34px; display: flex; flex-direction: column; justify-content: center; padding: 0 8px; border: 1px dashed var(--border); border-radius: 3px; background: var(--muted); font-size: 12px; color: var(--foreground); cursor: not-allowed; line-height: 1.2; }
+
+/* 詳細戦報（ゲーム内再現型ログ）— 和紙の軍記物ふうに */
+.br-overlay { position: fixed; inset: 0; z-index: 60; background: oklch(0.22 0.02 60 / 0.6); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; }
+.br-modal { width: min(920px, 100%); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; overflow: hidden; background: var(--card); border-top: 4px solid var(--primary); }
+.br-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; border-bottom: 3px double var(--foreground); }
+.br-header h3 { font-family: var(--font-display); letter-spacing: 0.04em; }
+.br-close { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 3px; color: var(--muted-foreground); cursor: pointer; background: var(--card); }
+.br-close:hover { color: var(--primary); border-color: var(--primary); }
+.br-outcome { font-size: 10px; border-radius: 2px; padding: 2px 8px; border: 1px solid var(--border); font-weight: 700; letter-spacing: 0.08em; }
 .br-outcome-win { color: var(--win); border-color: var(--win); }
 .br-outcome-draw { color: var(--draw); border-color: var(--draw); }
 .br-outcome-loss { color: var(--loss); border-color: var(--loss); }
 .br-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px 4px; }
-.br-side { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; background: var(--muted); }
+.br-side { border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; background: var(--background); }
 .br-side-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; }
 .br-side-grid dt { font-size: 9px; color: var(--muted-foreground); }
 .br-side-grid dd { margin: 0; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.br-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
-.br-tab { font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted-foreground); cursor: pointer; }
-.br-tab[data-active="true"] { background: var(--accent); color: var(--primary); border-color: var(--primary); font-weight: 600; }
+.br-tabs { display: flex; flex-wrap: wrap; gap: 2px 14px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.br-tab { font-size: 11px; padding: 4px 2px; border: none; border-bottom: 2px solid transparent; color: var(--muted-foreground); cursor: pointer; background: transparent; }
+.br-tab[data-active="true"] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
 .br-logs { overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 180px; }
-.br-log { display: flex; gap: 8px; align-items: flex-start; text-align: left; width: 100%; padding: 7px 8px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; background: transparent; color: var(--foreground); }
-.br-log:hover { background: var(--muted); }
-.br-log[data-active="true"] { border-color: var(--gold); background: var(--muted); }
-.br-badge { flex-shrink: 0; min-width: 86px; max-width: 150px; font-size: 10px; font-weight: 600; color: var(--gold); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; overflow-wrap: anywhere; }
+.br-log { display: flex; gap: 8px; align-items: flex-start; text-align: left; width: 100%; padding: 7px 8px; border: 1px solid transparent; border-left: 3px solid transparent; border-radius: 3px; cursor: pointer; background: transparent; color: var(--foreground); }
+.br-log:hover { background: var(--background); }
+.br-log[data-active="true"] { border-color: var(--border); border-left-color: var(--primary); background: var(--accent); }
+.br-badge { flex-shrink: 0; min-width: 86px; max-width: 150px; font-size: 10px; font-weight: 600; color: var(--gold); border: 1px solid var(--border); border-radius: 2px; padding: 3px 6px; overflow-wrap: anywhere; background: var(--card); }
 .br-avatar { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 1px solid var(--border); }
 .br-avatar-ally { background: var(--accent); color: var(--primary); }
-.br-avatar-enemy { background: oklch(0.32 0.06 15); color: var(--loss); }
+.br-avatar-enemy { background: oklch(0.93 0.03 20); color: var(--loss); }
 .br-log-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .br-log-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 10px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 .br-log-meta strong { color: var(--foreground); font-size: 11px; }
@@ -164,11 +223,11 @@
 .br-effects { display: flex; flex-wrap: wrap; gap: 4px; }
 .br-effect { font-size: 10px; text-decoration: underline; text-underline-offset: 3px; color: var(--gold); }
 .br-order { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 16px; border-top: 1px solid var(--border); }
-.br-order-item { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 3px 6px; border-radius: 6px; border: 1px solid transparent; }
-.br-order-item[data-active="true"] { border-color: var(--gold); background: var(--muted); }
+.br-order-item { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 3px 6px; border-radius: 4px; border: 1px solid transparent; }
+.br-order-item[data-active="true"] { border-color: var(--primary); background: var(--accent); }
 .br-order-name { font-size: 10px; color: var(--muted-foreground); }
 .br-order-item[data-active="true"] .br-order-name { color: var(--foreground); font-weight: 600; }
-.br-order-arrow { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 8px; color: var(--gold); }
+.br-order-arrow { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 8px; color: var(--primary); }
 @media (max-width: 640px) {
   .br-sides { grid-template-columns: 1fr; }
   .br-side-grid { grid-template-columns: repeat(2, 1fr); }
