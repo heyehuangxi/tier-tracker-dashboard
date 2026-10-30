@@ -9,7 +9,7 @@ export function GeneralFace({ name, className = "h-10 w-8", fallbackClassName = 
   const url = portraitUrlForName(name);
   const [failed, setFailed] = useState(false);
   if (!url || failed) {
-    return <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded bg-muted font-bold text-muted-foreground ${className} ${fallbackClassName}`}>{name.slice(0, 1)}</span>;
+    return <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-sm border border-primary/25 bg-accent font-display font-bold text-primary ${className} ${fallbackClassName}`}>{name.slice(0, 1)}</span>;
   }
   return <img src={url} alt="" loading="lazy" onError={() => setFailed(true)} className={`shrink-0 rounded object-cover object-top ${className}`} />;
 }
