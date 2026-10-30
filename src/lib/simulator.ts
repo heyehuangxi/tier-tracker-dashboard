@@ -1,4 +1,4 @@
-// Tier測定 戦闘シミュレーター（ブラウザ内で完結する簡易モデル）
+// 勝率測定 戦闘シミュレーター（ブラウザ内で完結する簡易モデル）
 import { generalById, tacticById, inherentByHolder, traitFor, activeTraitNames, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, type TroopType, type Squad, type Stats } from "./sengoku-data";
 
 export type TemplateMember = { name: string; tactics: [string, string]; alloc: string[] };
