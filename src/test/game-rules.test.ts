@@ -302,6 +302,13 @@ describe("Troop level （兵種レベル）", () => {
     expect(troopLevelFor(squadWith("騎兵", ["g-伊達政宗", null, null], [1, 0, 0])).level).toBe(3);
     expect(troopLevelFor(squadWith("鉄砲", ["g-伊達政宗", null, null], [1, 0, 0])).level).toBe(3);
   });
+  it("applies +2% per troop level to all stats in simulation", () => {
+    // 柴田勝家（1凸・馬術Ⅲで騎兵Lv3 = +6%）。足軽では対象特性がないため補正なし
+    const ash = squadTraitEffects(squadWith("足軽", ["g-柴田勝家", null, null], [1, 0, 0]))[0]!;
+    const cav = squadTraitEffects(squadWith("騎兵", ["g-柴田勝家", null, null], [1, 0, 0]))[0]!;
+    expect(ash.stats).toEqual([162, 208, 138, 167]);
+    expect(cav.stats).toEqual([172, 220, 146, 177]); // 各属性を ×1.06 して四捨五入
+  });
   it("carries troop and troop level into the battle report and opening log", () => {
     const squad = squadWith("騎兵", ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], [0, 1, 0]);
     const result = runSimulation(squad, [{ label: "test", squad }], 20);
