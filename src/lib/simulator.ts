@@ -53,7 +53,7 @@ export function templateToSquad(t: Template, ranks: number[]): Squad {
 // ---- 戦闘モデル ----
 // 公式: 兵刃ダメージ = (1.37×(武勇−相手統率) + 0.037×現在兵数 + 175) × (1+バフ−デバフ) × 兵種相性 × 乱数(±3%)
 // 戦法ダメージ = 基礎ダメージ × ダメージ率%（最大レベル値）。計略は知略−相手知略で同じ式を使う（暫定）。
-const MAX_TROOPS = 10000;
+const MAX_TROOPS = 10000; // 既定の1武将あたり開始兵力（部隊総兵力30,000の3等分）
 const HEAL_TABLE: [number, number][] = [[1000, 1.0], [1500, 1.5], [2000, 1.94], [3000, 2.56], [4000, 2.95], [5000, 3.3], [6000, 3.56], [7000, 3.79], [8000, 3.98], [9000, 4.14], [10000, 4.3]];
 /** 残存兵数に応じた回復倍率（線形補間） */
 export function healMultiplier(troops: number): number {
@@ -109,7 +109,7 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   // --- 汎用機構のパース（会心・奇策・連撃・回避・被ダメージ軽減・継続ダメージ・挑発・浄化・鉄壁） ---
   const critM = e.match(/([\d.]+)%の会心/);
   const crit = critM ? Number(critM[1]) / 100 : /会心を獲得/.test(e) ? 0.3 : 0;
-  const kishakuM = e.match(/奇策を([\d.]+)%獲得/) ?? e.match(/([\d.]+)%の奇策/);
+  const kishakuM = e.match(/奇策を([\d.]+)%獲得/) ?? e.match(/([\d.]+)%の奇策/) ?? e.match(/奇策([\d.]+)%/);
   const kishaku = kishakuM ? Number(kishakuM[1]) / 100 : 0;
   const rengekiM = e.match(/([\d.]+)%の連撃/);
   const rengeki = rengekiM ? Number(rengekiM[1]) / 100 : /連撃を獲得|連撃（1ターンに2回通常攻撃）/.test(e) ? 1 : 0;
@@ -184,6 +184,7 @@ function buildUnits(q: Squad): Unit[] {
   const bonus = hasFactionBonus(q.generals);
   // 兵種レベルの属性補正: +2%/レベルを部隊全員の全属性に乗算（振り分け・勢力ボーナスの後に適用する簡易モデル）
   const lvMul = 1 + TROOP_LEVEL_STAT_RATE * troopLevelFor(q).level;
+  const startTroops = Math.round((q.startTroops ?? MAX_TROOPS * 3) / 3); // 部隊の総開始兵力を3名に均等配分する簡易モデル
   void effectiveFaction;
   const units = [0, 1, 2].map(i => {
     const id = q.generals[i]; const g = id ? generalById.get(id) : undefined;
@@ -211,9 +212,13 @@ function buildUnits(q: Squad): Unit[] {
       if (inh.name === "風流武者") { spec.heal = 0; spec.typeBuffs = []; }
       specs.unshift(spec);
     }
-    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: MAX_TROOPS, max: MAX_TROOPS, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0, ranbuMods: [], sui: inh?.name === "伊達の粋" ? 5 : 0, suiBoosts: 0, suiHitsB: 0, suiHitsS: 0, hasSui: inh?.name === "伊達の粋", ikkiActive: false, ikkiChance: 0.3, hasIkki: inh?.name === "一切皆空", traits: g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : [], traitSet: new Set(g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : []), typeDmgMods: [], typeTakenMods: [], critDmgMods: [], bonusCrit: { b: 0, s: 0, dmgB: 0, dmgS: 0 }, shieldNext: 0, ctrlResists: [], naEvade: 0, targetWeight: 1, tacticTargetWeight: 1, wasHitTurn: -1, dealtTurn: -1, nextDmg: { delta: 0, left: 0 }, actProbMods: [], counters: {}, naDmgBonus: 0, naBuffMods: [], kindDmgMods: [], kindTakenMods: [], naTakenMods: [] };
+    // 七十二の計は汎用パースでは毎ターン全体ダメージになってしまうため、専用処理（発動回数カウント）に委ねる
+    for (const s of specs) if (s.name === "七十二の計") s.dmg = [];
+    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: startTroops, max: startTroops, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0, ranbuMods: [], sui: inh?.name === "伊達の粋" ? 5 : 0, suiBoosts: 0, suiHitsB: 0, suiHitsS: 0, hasSui: inh?.name === "伊達の粋", ikkiActive: false, ikkiChance: 0.3, hasIkki: inh?.name === "一切皆空", traits: g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : [], traitSet: new Set(g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : []), typeDmgMods: [], typeTakenMods: [], critDmgMods: [], bonusCrit: { b: 0, s: 0, dmgB: 0, dmgS: 0 }, shieldNext: 0, ctrlResists: [], naEvade: 0, targetWeight: 1, tacticTargetWeight: 1, wasHitTurn: -1, dealtTurn: -1, nextDmg: { delta: 0, left: 0 }, actProbMods: [], counters: {}, naDmgBonus: 0, naBuffMods: [], kindDmgMods: [], kindTakenMods: [], naTakenMods: [] };
     // 風林火山: 戦闘開始時の旗は自身の最も高い属性で決まる（速度=風0・知略=林1・武勇=火2・統率=山3）
     if (inh?.name === "風林火山") { const toFlag = [3, 2, 1, 0]; let best = 0; st.forEach((v, k) => { if (v > (st[best] ?? 0)) best = k; }); u.counters["furin"] = toFlag[best]!; }
+    // 七十二の計: 奇策ダメージ率+30%（奇策+50%は汎用パース→オーラで適用）
+    if (specs.some(s => s.name === "七十二の計")) u.critDmgMods.push({ type: "計略", delta: 0.3, until: 99 });
     // 受動・指揮・兵種の付与系（休養・離反・心攻など）は戦闘開始から常時
     // 古今独歩の離反は反撃が当たるたびに4%ずつ重なる専用処理のため、ここでは付与しない
     for (const s of specs) if (s.prob >= 1 && s.kind !== "突撃" && s.kind !== "能動") for (const [k, v] of Object.entries(s.grant)) if (k !== "回生" && !(s.name === "古今独歩" && k === "離反")) u.status[k as keyof Unit["status"]] = { rate: v!, until: 99 };
@@ -377,7 +382,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     logs.push({ ...rest, effects: e.effects ?? [], actorTroops: Math.round(actorUnit.troops), actorSpeed: Math.round(effSpeed(actorUnit, Math.max(0, e.turn - 1))), kills: Math.round(actorUnit.dealtBy), healedByActor: Math.round(actorUnit.healedBy) });
   };
   if (collectLog) {
-    for (const u of [...A, ...B]) { const lv = u.side === "自軍" ? allyLv : enemyLv; pushLog({ turn: 0, kind: "開始", actor: u.name, actorSide: u.side, actorUnit: u, segments: [seg(u), { text: ` 兵力${MAX_TROOPS} 速度${Math.round(effSpeed(u, 0))}（${lv.troop}Lv${lv.level}）で合戦開始`, tone: "plain" }] }); }
+    for (const u of [...A, ...B]) { const lv = u.side === "自軍" ? allyLv : enemyLv; pushLog({ turn: 0, kind: "開始", actor: u.name, actorSide: u.side, actorUnit: u, segments: [seg(u), { text: ` 兵力${u.max} 速度${Math.round(effSpeed(u, 0))}（${lv.troop}Lv${lv.level}）で合戦開始`, tone: "plain" }] }); }
   }
   // 覇王: 自身が兵力を回復したとき、敵単体に回復量の10%分の兵力損失（上限は自身の最大兵力の10%）
   const haouCheck = (target: Unit, healedAmt: number, turn: number) => {
@@ -508,7 +513,16 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     const k = own.find(x => x.gunshin && x !== src && x.troops > 0);
     if (k && Math.random() < 0.66) k.tame = Math.min(12, k.tame + 1);
   };
+  // 七十二の計: 所持者自身の発動（戦法の発動・通常攻撃）を数え、7回ごとに敵全体へ計略ダメージ（最大レベル120%）
+  const trigger72 = (src: Unit, foe: Unit[], mine: boolean, turn: number) => {
+    if (!src.specs.some(s => s.name === "七十二の計") || src.troops <= 0) return;
+    src.counters["n72"] = (src.counters["n72"] ?? 0) + 1;
+    if (src.counters["n72"] % 7 !== 0) return;
+    if (collectLog) logs.push({ turn: turn + 1, kind: "戦法", actor: src.name, actorSide: src.side, actorTroops: Math.round(src.troops), actorSpeed: Math.round(effSpeed(src, turn)), kills: Math.round(src.dealtBy), healedByActor: Math.round(src.healedBy), tacticName: "七十二の計", tacticGrade: "S", tacticKind: "受動", effects: ["発動7回"], segments: [seg(src), { text: ` の `, tone: "plain" }, { text: "七十二の計", tone: "effect" }, { text: ` が発動（${src.counters["n72"]}回目）`, tone: "plain" }] });
+    for (const t of alive(foe)) damage(src, t, "計略", 120, mine, turn, { label: "七十二の計", grade: "S", kind: "受動" });
+  };
   const fire = (src: Unit, s: TSpec, own: Unit[], foe: Unit[], mine: boolean, turn: number, mainTarget?: Unit) => {
+    if (s.name !== "七十二の計") trigger72(src, foe, mine, turn);
     if (s.kind === "能動" || s.kind === "突撃") tameTrigger(src, own);
     if (s.cooldown) src.cooldownUntil.set(s.name, turn + 1);
     const until = turn + s.duration - 1;
@@ -634,13 +648,13 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
         }
       }
     }
-    // 一切皆空: 2ターン目以降、一揆の発動を判定（失敗するたび発動確率+40ポイント）。発動後は行動時に一揆状態を付与
+    // 一切皆空: 2ターン目以降、一揆の発動を判定（失敗するたび発動確率が40%増加＝乗算）。発動後は行動時に一揆状態を付与
     if (u.hasIkki) {
       if (!u.ikkiActive && turn >= 1) {
         if (Math.random() < u.ikkiChance) {
           u.ikkiActive = true;
           if (collectLog) logs.push({ turn: turn + 1, kind: "状態", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: ["一揆発動"], segments: [seg(u), { text: ` が `, tone: "plain" }, { text: "一揆", tone: "effect" }, { text: ` を発動`, tone: "plain" }] });
-        } else u.ikkiChance = Math.min(1, u.ikkiChance + 0.4);
+        } else u.ikkiChance = Math.min(1, u.ikkiChance * 1.4);
       }
       if (u.ikkiActive && alive(foe).length) {
         const p = Math.min(0.9, 0.8 + 0.01 * (turn + 1)); // 80〜90%（ターン数依存を線形で近似）
@@ -705,6 +719,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
       const t2 = u.taunt && turn <= u.taunt.until && u.taunt.src.troops > 0 ? u.taunt.src : wpick(alive(foe), 1, x => x.targetWeight)[0];
       if (t2) normalHit(t2);
     }
+    trigger72(u, foe, mine, turn); // 通常攻撃も七十二の計の発動回数に数える
     if (u.gunshin) u.tame = 0; // 通常攻撃後に「溜め」リセット
     tameTrigger(u, own); // 味方の通常攻撃は軍神の「溜め」判定対象（自身は tameTrigger 内で除外）
     // 三河武士: 自軍の通常攻撃後、15%で自身の次回の被ダメージ-50%（部隊内に所持者がいる場合）
@@ -725,14 +740,14 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
       const squad = u.side === "自軍" ? A : B;
       for (const ally of squad) if (ally !== u && ally.troops > 0 && (ally.counters["zaideki"] ?? 0) < 2 && Math.random() < 0.4) { ally.counters["zaideki"] = (ally.counters["zaideki"] ?? 0) + 1; ally.nextDmg = { delta: 0.28, left: ally.nextDmg.left + 1 }; }
     }
-    // 風林火山: 2ターンごとに旗が 風→林→火→山 の順で切り替わり、その旗の効果だけが発動する（開始旗は所持者の最高属性）
-    if (turn % 2 === 0) for (const [own, foe, mine] of [[A, B, true], [B, A, false]] as const) for (const u of own) {
+    // 風林火山: 旗は2ターンごとに 風→林→火→山 の順で切り替わり、旗の効果はその2ターンの間どちらも発動する（開始旗は所持者の最高属性）
+    for (const [own, foe, mine] of [[A, B, true], [B, A, false]] as const) for (const u of own) {
       const start = u.counters["furin"];
       if (start === undefined || u.troops <= 0) continue;
-      const flag = Number((start + turn / 2) % 4);
+      const flag = Number((start + Math.floor(turn / 2)) % 4);
       const flagName = ["風", "林", "火", "山"][flag]!;
-      if (flag === 0) for (const ally of own) if (ally.troops > 0) ally.typeDmgMods.push({ type: "兵刃", delta: 0.22, until: turn + 1 });
-      if (flag === 3) for (const ally of own) if (ally.troops > 0) ally.typeTakenMods.push({ type: "兵刃", delta: 0.22, until: turn + 1 });
+      if (flag === 0) for (const ally of own) if (ally.troops > 0) ally.typeDmgMods.push({ type: "兵刃", delta: 0.22, until: turn });
+      if (flag === 3) for (const ally of own) if (ally.troops > 0) ally.typeTakenMods.push({ type: "兵刃", delta: 0.22, until: turn });
       if (flag === 1 || flag === 2) {
         // 林: 敵複数（2〜3名）に計略92% / 火: 敵単体〜複数（1〜2名）に兵刃156%。大将時は対象数が増える確率が25%上昇
         const n = (flag === 1 ? 2 : 1) + (Math.random() < (u.isLeader ? 0.75 : 0.5) ? 1 : 0);
@@ -766,9 +781,9 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
   const report: BattleReport = {
     outcome, outcomeLabel: OUTCOME_LABELS[outcome],
     allyTroop: allyLv.troop, allyTroopLevel: allyLv.level, enemyTroop: enemyLv.troop, enemyTroopLevel: enemyLv.level,
-    allyTotal: MAX_TROOPS * 3, enemyTotal: MAX_TROOPS * 3,
+    allyTotal: A.reduce((s, u) => s + u.max, 0), enemyTotal: B.reduce((s, u) => s + u.max, 0),
     allyRemaining: Math.round(sum(A)), enemyRemaining: Math.round(sum(B)),
-    allyDead: Math.round(MAX_TROOPS * 3 - sum(A)), enemyDead: Math.round(MAX_TROOPS * 3 - sum(B)),
+    allyDead: Math.round(A.reduce((s, u) => s + u.max, 0) - sum(A)), enemyDead: Math.round(B.reduce((s, u) => s + u.max, 0) - sum(B)),
     allyWounded: Math.round(healed), enemyWounded: Math.round(healedEnemy),
     dealt: Math.round(dealt), taken: Math.round(taken),
     units: all.map(u => ({ name: u.name, side: u.side, slot: u.slot, speed: Math.round(u.st[3] ?? 0), troops: Math.round(u.troops), max: u.max, dealt: Math.round(u.dealtBy), healed: Math.round(u.healedBy) })),
