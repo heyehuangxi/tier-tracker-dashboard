@@ -309,6 +309,41 @@ describe("Troop level （兵種レベル）", () => {
     expect(ash.stats).toEqual([162, 208, 138, 167]);
     expect(cav.stats).toEqual([172, 220, 146, 177]); // 各属性を ×1.06 して四捨五入
   });
+  it("adds the facility (barracks) level on top of trait levels, still capped", () => {
+    expect(troopLevelFor({ ...emptySquad(), troop: "騎兵", facLv: 6 }).level).toBe(6);
+    // 特性8 + 施設6 = 14 だが、大将ありの上限11で止まる
+    const r = troopLevelFor({ ...emptySquad(), troop: "騎兵", generals: ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], ranks: [0, 1, 0], facLv: 6 });
+    expect(r).toEqual({ troop: "騎兵", level: 11, cap: 11 });
+    // 共有リンクの往復でも施設レベルと開始兵力が保持され、範囲外は丸められる
+    const rt = decodeFormation(encodeFormation({ mode: "free", squads: [{ ...emptySquad(), facLv: 6, startTroops: 22785 }] }))?.squads[0];
+    expect(rt?.facLv).toBe(6);
+    expect(rt?.startTroops).toBe(22785);
+    expect(normSquad({ generals: [], tactics: [], facLv: 99, startTroops: 99999 }).facLv).toBe(10);
+    expect(normSquad({ generals: [], tactics: [], facLv: 99, startTroops: 99999 }).startTroops).toBe(30000);
+  });
+  it("uses the squad's starting troops in the battle report totals", () => {
+    const squad = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], startTroops: 22785 };
+    const result = runSimulation(squad, [{ label: "test", squad: emptySquad() }], 20);
+    const report = result.perOpponent[0]?.report;
+    expect(report?.allyTotal).toBe(22785);
+    expect(report?.enemyTotal).toBe(30000);
+    expect((report?.allyRemaining ?? 0) + (report?.allyDead ?? 0)).toBe(22785);
+  });
+  it("handles 七十二の計 as a counted passive, not an every-turn AoE", () => {
+    const parsed = parseTactic("七十二の計", "受動", "-", "奇策50%・奇策ダメージ率30%増加。7回発動後、敵全体に計略ダメージ（60%〜120%）。", "S");
+    expect(parsed.kishaku).toBe(0.5); // 奇策+50%はバフとして効く
+    // どの代表試行でも、七十二の計のダメージ発生回数は「7回ごとの発動」分だけに限られる（旧仕様は毎ターン全体）
+    const t72 = TEMPLATES.find(t => t.members.some(m => m.tactics.includes("七十二の計")));
+    const t0 = TEMPLATES[0];
+    if (!t72 || !t0) throw new Error("Missing template");
+    const s72 = templateToSquad(t72, [0, 0, 0]);
+    const s0 = templateToSquad(t0, [0, 0, 0]);
+    for (let i = 0; i < 5; i++) {
+      const rep = runSimulation(s72, [{ label: "t", squad: s0 }], 20).perOpponent[0]?.report;
+      const hits = rep?.logs.filter(l => l.tacticName === "七十二の計" && l.actorSide === "自軍" && (l.damage ?? 0) > 0).length ?? 0;
+      expect(hits).toBeLessThanOrEqual(9); // 最大でも 発動3回 × 3名
+    }
+  });
   it("carries troop and troop level into the battle report and opening log", () => {
     const squad = squadWith("騎兵", ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], [0, 1, 0]);
     const result = runSimulation(squad, [{ label: "test", squad }], 20);
