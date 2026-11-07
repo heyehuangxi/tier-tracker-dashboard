@@ -27,9 +27,9 @@ export function BattleReportModal({ report, opponentLabel, allyLabel, onClose }:
   useEffect(() => { setActiveIdx(0); }, [tab, report]);
   const active = logs[Math.min(activeIdx, Math.max(0, logs.length - 1))];
   const win = report.outcome <= 1;
-  const SideSummary = ({ title, total, remaining, dead, wounded, accent }: { title: string; total: number; remaining: number; dead: number; wounded: number; accent: string }) => (
+  const SideSummary = ({ title, troop, troopLevel, total, remaining, dead, wounded, accent }: { title: string; troop: string; troopLevel: number; total: number; remaining: number; dead: number; wounded: number; accent: string }) => (
     <div className="br-side">
-      <p className={`text-xs font-semibold ${accent}`}>{title}</p>
+      <p className={`text-xs font-semibold ${accent}`}>{title} <span className="font-normal text-muted-foreground">（{troop} Lv{troopLevel}）</span></p>
       <dl className="br-side-grid">
         <div><dt>総兵数</dt><dd>{total.toLocaleString("en-US")}</dd></div>
         <div><dt>残存</dt><dd>{remaining.toLocaleString("en-US")}</dd></div>
@@ -50,8 +50,8 @@ export function BattleReportModal({ report, opponentLabel, allyLabel, onClose }:
         </header>
 
         <div className="br-sides">
-          <SideSummary title="自軍" total={report.allyTotal} remaining={report.allyRemaining} dead={report.allyDead} wounded={report.allyWounded} accent="text-primary" />
-          <SideSummary title="敵軍" total={report.enemyTotal} remaining={report.enemyRemaining} dead={report.enemyDead} wounded={report.enemyWounded} accent="text-loss" />
+          <SideSummary title="自軍" troop={report.allyTroop} troopLevel={report.allyTroopLevel} total={report.allyTotal} remaining={report.allyRemaining} dead={report.allyDead} wounded={report.allyWounded} accent="text-primary" />
+          <SideSummary title="敵軍" troop={report.enemyTroop} troopLevel={report.enemyTroopLevel} total={report.enemyTotal} remaining={report.enemyRemaining} dead={report.enemyDead} wounded={report.enemyWounded} accent="text-loss" />
         </div>
 
         <nav className="br-tabs" aria-label="ターン切り替え">
