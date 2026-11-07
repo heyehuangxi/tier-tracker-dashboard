@@ -1,5 +1,5 @@
 // 勝率測定 戦闘シミュレーター（ブラウザ内で完結する簡易モデル）
-import { generalById, tacticById, inherentByHolder, traitFor, activeTraitNames, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, troopLevelFor, type TroopType, type Squad, type Stats } from "./sengoku-data";
+import { generalById, tacticById, inherentByHolder, traitFor, activeTraitNames, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, troopLevelFor, TROOP_LEVEL_STAT_RATE, type TroopType, type Squad, type Stats } from "./sengoku-data";
 
 export type TemplateMember = { name: string; tactics: [string, string]; alloc: string[] };
 export type Template = { label: string; troop: TroopType; members: TemplateMember[] };
@@ -182,11 +182,13 @@ type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; 
 const FALLBACK: Stats = [160, 150, 160, 100];
 function buildUnits(q: Squad): Unit[] {
   const bonus = hasFactionBonus(q.generals);
+  // 兵種レベルの属性補正: +2%/レベルを部隊全員の全属性に乗算（振り分け・勢力ボーナスの後に適用する簡易モデル）
+  const lvMul = 1 + TROOP_LEVEL_STAT_RATE * troopLevelFor(q).level;
   void effectiveFaction;
   const units = [0, 1, 2].map(i => {
     const id = q.generals[i]; const g = id ? generalById.get(id) : undefined;
     const base = g?.stats ?? FALLBACK; const al = q.alloc?.[i] ?? [0, 0, 0, 0];
-    const st = base.map((v, k) => buffed(v + (al[k] ?? 0), bonus)) as Stats;
+    const st = base.map((v, k) => Math.round(buffed(v + (al[k] ?? 0), bonus) * lvMul)) as Stats;
     const equipped = [q.tactics[i * 2], q.tactics[i * 2 + 1]].map(id => (id ? tacticById.get(id) : undefined)).filter(Boolean).map(t => parseTactic(t!.name, t!.kind, t!.rate, t!.effect, t!.grade));
     // 固有戦法（所持武将の固有をマスターから取得し、発動率・準備ターンは提供データの列を正とする）
     const specs: TSpec[] = [...equipped];
