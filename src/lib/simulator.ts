@@ -1,5 +1,5 @@
 // 勝率測定 戦闘シミュレーター（ブラウザ内で完結する簡易モデル）
-import { generalById, tacticById, inherentByHolder, traitFor, activeTraitNames, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, type TroopType, type Squad, type Stats } from "./sengoku-data";
+import { generalById, tacticById, inherentByHolder, traitFor, activeTraitNames, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, troopLevelFor, type TroopType, type Squad, type Stats } from "./sengoku-data";
 
 export type TemplateMember = { name: string; tactics: [string, string]; alloc: string[] };
 export type Template = { label: string; troop: TroopType; members: TemplateMember[] };
@@ -320,6 +320,7 @@ export type BattleLogEntry = {
 export type BattleUnitSummary = { name: string; side: "自軍" | "敵軍"; slot: number; speed: number; troops: number; max: number; dealt: number; healed: number };
 export type BattleReport = {
   outcome: BattleStat["outcome"]; outcomeLabel: string;
+  allyTroop: TroopType; allyTroopLevel: number; enemyTroop: TroopType; enemyTroopLevel: number;
   allyTotal: number; enemyTotal: number; allyRemaining: number; enemyRemaining: number;
   allyDead: number; enemyDead: number; allyWounded: number; enemyWounded: number;
   dealt: number; taken: number;
@@ -331,6 +332,7 @@ const OUTCOME_LABELS = ["勝利", "優勢", "引分", "劣勢", "敗北"] as con
 const STAT_LABELS = ["統率", "武勇", "知略", "速度"] as const;
 
 function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; report: BattleReport } {
+  const allyLv = troopLevelFor(a), enemyLv = troopLevelFor(b);
   const A = buildUnits(a), B = buildUnits(b);
   A.forEach((u, i) => { u.side = "自軍"; u.slot = i; });
   B.forEach((u, i) => { u.side = "敵軍"; u.slot = i + 3; });
@@ -373,7 +375,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     logs.push({ ...rest, effects: e.effects ?? [], actorTroops: Math.round(actorUnit.troops), actorSpeed: Math.round(effSpeed(actorUnit, Math.max(0, e.turn - 1))), kills: Math.round(actorUnit.dealtBy), healedByActor: Math.round(actorUnit.healedBy) });
   };
   if (collectLog) {
-    for (const u of [...A, ...B]) pushLog({ turn: 0, kind: "開始", actor: u.name, actorSide: u.side, actorUnit: u, segments: [seg(u), { text: ` 兵力${MAX_TROOPS} 速度${Math.round(effSpeed(u, 0))} で合戦開始`, tone: "plain" }] });
+    for (const u of [...A, ...B]) { const lv = u.side === "自軍" ? allyLv : enemyLv; pushLog({ turn: 0, kind: "開始", actor: u.name, actorSide: u.side, actorUnit: u, segments: [seg(u), { text: ` 兵力${MAX_TROOPS} 速度${Math.round(effSpeed(u, 0))}（${lv.troop}Lv${lv.level}）で合戦開始`, tone: "plain" }] }); }
   }
   // 覇王: 自身が兵力を回復したとき、敵単体に回復量の10%分の兵力損失（上限は自身の最大兵力の10%）
   const haouCheck = (target: Unit, healedAmt: number, turn: number) => {
@@ -761,6 +763,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
   const all = [...A, ...B];
   const report: BattleReport = {
     outcome, outcomeLabel: OUTCOME_LABELS[outcome],
+    allyTroop: allyLv.troop, allyTroopLevel: allyLv.level, enemyTroop: enemyLv.troop, enemyTroopLevel: enemyLv.level,
     allyTotal: MAX_TROOPS * 3, enemyTotal: MAX_TROOPS * 3,
     allyRemaining: Math.round(sum(A)), enemyRemaining: Math.round(sum(B)),
     allyDead: Math.round(MAX_TROOPS * 3 - sum(A)), enemyDead: Math.round(MAX_TROOPS * 3 - sum(B)),
