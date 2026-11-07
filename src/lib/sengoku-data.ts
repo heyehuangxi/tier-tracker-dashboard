@@ -76,6 +76,8 @@ export function troopDamageMultiplier(attacker: unknown, defender: unknown): num
 }
 /** 兵種レベルの上限（大将特性で+1） */
 export const TROOP_LEVEL_CAP = 10;
+/** 兵種レベル1ごとの全属性補正（ゲーム仕様: +2%/レベル、部隊全員に適用） */
+export const TROOP_LEVEL_STAT_RATE = 0.02;
 /**
  * 部隊の兵種レベルを算出する。ゲーム内では武将特性（「部隊の○○レベル+N」）と
  * 施設（兵舎）の合計で決まるが、本ツールに施設の入力はないため特性分のみを合計する。
