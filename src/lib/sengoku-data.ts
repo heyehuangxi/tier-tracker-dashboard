@@ -79,13 +79,13 @@ export const TROOP_LEVEL_CAP = 10;
 /** 兵種レベル1ごとの全属性補正（ゲーム仕様: +2%/レベル、部隊全員に適用） */
 export const TROOP_LEVEL_STAT_RATE = 0.02;
 /**
- * 部隊の兵種レベルを算出する。ゲーム内では武将特性（「部隊の○○レベル+N」）と
- * 施設（兵舎）の合計で決まるが、本ツールに施設の入力はないため特性分のみを合計する。
+ * 部隊の兵種レベルを算出する。武将特性（「部隊の○○レベル+N」）の合計に、
+ * 編成で入力した施設（兵舎）分 facLv を加える。
  * 凸数で解放される特性だけが有効（activeTraitNames と同じ解放条件）。
  */
 export function troopLevelFor(q: Squad): { troop: TroopType; level: number; cap: number } {
   const troop = normalizeTroop(q?.troop);
-  let sum = 0;
+  let sum = Math.max(0, Math.min(10, Math.floor(Number(q?.facLv) || 0)));
   let capBonus = 0;
   for (let i = 0; i < 3; i++) {
     const id = q?.generals?.[i];
@@ -102,17 +102,19 @@ export function troopLevelFor(q: Squad): { troop: TroopType; level: number; cap:
   const cap = TROOP_LEVEL_CAP + capBonus;
   return { troop, level: Math.min(sum, cap), cap };
 }
-export type Squad = { troop?: TroopType; generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
+export type Squad = { troop?: TroopType; generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][]; facLv?: number; startTroops?: number }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定。facLv=施設（兵舎）で上がる兵種レベル、startTroops=部隊の総開始兵力
 export type Mode = "coexist" | "free";
 export type Formation = { mode: Mode; squads: Squad[] };
 export type SavedFormation = Formation & { id: string; name: string; createdAt: string };
 
 export const emptySquad = (): Squad => ({ troop: "足軽", generals: [null, null, null], tactics: [null, null, null, null, null, null], ranks: [0, 0, 0], alloc: [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] });
 const clampRank = (n: unknown) => Math.max(0, Math.min(5, Math.floor(Number(n) || 0)));
+const clampFacLv = (n: unknown) => Math.max(0, Math.min(10, Math.floor(Number(n) || 0)));
+const clampStartTroops = (n: unknown) => { const v = Math.floor(Number(n) || 0); return v > 0 ? Math.max(300, Math.min(30000, v)) : 30000; };
 export function normSquad(q: Squad): Squad {
   const ranks = [0, 1, 2].map(i => clampRank(q?.ranks?.[i]));
   const alloc = [0, 1, 2].map(i => { let left = pointsFor(ranks[i]!); return [0, 1, 2, 3].map(k => { const v = Math.max(0, Math.min(left, Math.floor(Number(q?.alloc?.[i]?.[k]) || 0))); left -= v; return v; }); });
-  return { troop: normalizeTroop(q?.troop), generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i] ?? null : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i] ?? null : null)), ranks, alloc };
+  return { troop: normalizeTroop(q?.troop), generals: [0, 1, 2].map(i => (generalById.has(q?.generals?.[i] ?? "") ? q.generals[i] ?? null : null)), tactics: [0, 1, 2, 3, 4, 5].map(i => (tacticById.has(q?.tactics?.[i] ?? "") ? q.tactics[i] ?? null : null)), ranks, alloc, facLv: clampFacLv(q?.facLv), startTroops: clampStartTroops(q?.startTroops) };
 }
 
 export function encodeFormation(f: Formation & { name?: string | undefined }) {
