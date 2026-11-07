@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, type Squad } from "@/lib/sengoku-data";
+import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
@@ -278,5 +278,37 @@ describe("Troops, search and tactics", () => {
     // 対象数は敵側の範囲表記を優先する（自軍複数を敵の対象数に数えない）
     expect(P("忠勤励行").targets).toBe(1);
     expect(P("比翼連理").targets).toBe(2);
+  });
+});
+describe("Troop level （兵種レベル）", () => {
+  const squadWith = (troop: "騎兵" | "足軽" | "鉄砲", generals: (string | null)[], ranks: number[]): Squad => ({ ...emptySquad(), troop, generals, ranks });
+  it("sums level traits from all generals and applies the taisho cap bonus", () => {
+    // 柿崎景家（素: 騎兵大将 +3・上限+1）+ 柴田勝家（1凸: 馬術Ⅲ +3）+ 佐久間盛政（素: 馬術Ⅱ +2）= 8 / 上限11
+    const r = troopLevelFor(squadWith("騎兵", ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], [0, 1, 0]));
+    expect(r).toEqual({ troop: "騎兵", level: 8, cap: 11 });
+  });
+  it("only counts traits unlocked at the general's rank", () => {
+    expect(troopLevelFor(squadWith("騎兵", ["g-柴田勝家", null, null], [0, 0, 0])).level).toBe(0);
+    expect(troopLevelFor(squadWith("騎兵", ["g-柴田勝家", null, null], [1, 0, 0])).level).toBe(3);
+  });
+  it("applies multi-troop traits to each listed troop only", () => {
+    // 前田慶次（1凸: 馬槍術Ⅱ = 騎兵・足軽 +2）
+    expect(troopLevelFor(squadWith("騎兵", ["g-前田慶次", null, null], [1, 0, 0])).level).toBe(2);
+    expect(troopLevelFor(squadWith("足軽", ["g-前田慶次", null, null], [1, 0, 0])).level).toBe(2);
+    expect(troopLevelFor(squadWith("鉄砲", ["g-前田慶次", null, null], [1, 0, 0])).level).toBe(0);
+  });
+  it("handles the 『レベルがN増加』 wording （昇り龍）", () => {
+    // 伊達政宗（1凸: 昇り龍 = 騎兵・鉄砲レベルが3増加）
+    expect(troopLevelFor(squadWith("騎兵", ["g-伊達政宗", null, null], [1, 0, 0])).level).toBe(3);
+    expect(troopLevelFor(squadWith("鉄砲", ["g-伊達政宗", null, null], [1, 0, 0])).level).toBe(3);
+  });
+  it("carries troop and troop level into the battle report and opening log", () => {
+    const squad = squadWith("騎兵", ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], [0, 1, 0]);
+    const result = runSimulation(squad, [{ label: "test", squad }], 20);
+    const report = result.perOpponent[0]?.report;
+    expect(report?.allyTroop).toBe("騎兵");
+    expect(report?.allyTroopLevel).toBe(8);
+    expect(report?.enemyTroopLevel).toBe(8);
+    expect(report?.logs.some(l => l.turn === 0 && l.segments.some(s => s.text.includes("騎兵Lv8")))).toBe(true);
   });
 });
