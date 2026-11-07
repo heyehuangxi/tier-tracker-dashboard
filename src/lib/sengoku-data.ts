@@ -74,6 +74,32 @@ export function troopDamageMultiplier(attacker: unknown, defender: unknown): num
   const a = normalizeTroop(attacker), b = normalizeTroop(defender);
   return TROOP_ADVANTAGE[a] === b ? 1.125 : TROOP_ADVANTAGE[b] === a ? 0.875 : 1;
 }
+/** 兵種レベルの上限（大将特性で+1） */
+export const TROOP_LEVEL_CAP = 10;
+/**
+ * 部隊の兵種レベルを算出する。ゲーム内では武将特性（「部隊の○○レベル+N」）と
+ * 施設（兵舎）の合計で決まるが、本ツールに施設の入力はないため特性分のみを合計する。
+ * 凸数で解放される特性だけが有効（activeTraitNames と同じ解放条件）。
+ */
+export function troopLevelFor(q: Squad): { troop: TroopType; level: number; cap: number } {
+  const troop = normalizeTroop(q?.troop);
+  let sum = 0;
+  let capBonus = 0;
+  for (let i = 0; i < 3; i++) {
+    const id = q?.generals?.[i];
+    const g = id ? generalById.get(id) : undefined;
+    if (!g) continue;
+    for (const name of activeTraitNames(g, q?.ranks?.[i] ?? 0)) {
+      const e = traitFor(name)?.effect ?? "";
+      const m = e.match(/部隊の([足軽騎兵弓兵鉄砲兵器・]+)レベル(?:\+(\d+)|が(\d+)増加)/);
+      if (!m || !m[1]!.split("・").includes(troop)) continue;
+      sum += Number(m[2] ?? m[3] ?? 0);
+      if (e.includes("レベル上限+1")) capBonus = 1;
+    }
+  }
+  const cap = TROOP_LEVEL_CAP + capBonus;
+  return { troop, level: Math.min(sum, cap), cap };
+}
 export type Squad = { troop?: TroopType; generals: (string | null)[]; tactics: (string | null)[]; ranks?: number[]; alloc?: number[][] }; // 武将3・伝授戦法6（各武将2枠）。固有戦法は武将から自動決定
 export type Mode = "coexist" | "free";
 export type Formation = { mode: Mode; squads: Squad[] };
