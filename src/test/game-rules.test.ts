@@ -282,7 +282,7 @@ describe("Troops, search and tactics", () => {
   });
   it("marks reactive (counter) tactics so they never fire proactively, and commander-sniping tactics as leader-targeted", () => {
     const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
-    for (const n of ["古今独歩", "援護射撃", "洞察反撃", "剛毅木訥", "月華鶴影", "百万一心", "耐苦鍛錬"]) expect(P(n).reactive, n).toBe(true);
+    for (const n of ["古今独歩", "洞察反撃", "剛毅木訥", "月華鶴影", "百万一心", "耐苦鍛錬"]) expect(P(n).reactive, n).toBe(true);
     expect(P("風林火山").reactive).toBe(false);
     expect(P("離心の計").targetLeader).toBe(true);
     expect(P("闇討ち").targetLeader).toBe(true);
@@ -371,6 +371,42 @@ describe("Reactive healing （反応回復）", () => {
     const parsed = parseTactic("鬼美濃", "受動", "100%", "ダメージを受けると、35%の確率で自身の弱体化効果を浄化し、自身の兵力を回復（回復率112%、統率依存）", "S");
     expect(parsed.reactHeal).toEqual({ chance: 0.35, rate: 112, statIdx: 0 });
     expect(parsed.heal).toBe(0);
+  });
+  it("parses heal target, count and dependency stat from the tactic text", () => {
+    const echigo = parseTactic("越後二天", "突撃", "90%", "通常攻撃後、対象に兵刃ダメージ（ダメージ率108%）を与え、さらに40%の確率で1ターン間、無策状態を付与する。目標がすでに無策状態の場合、自身の兵力を回復（回復率78%、武勇依存）。", "S");
+    expect(echigo.healSelf).toBe(true);
+    expect(echigo.healStatIdx).toBe(1); // 武勇依存
+    const kaiten = parseTactic("回天転運", "能動", "40%", "最も兵力損失が多い自軍単体の弱体化効果を2つ浄化し、兵力を回復（130%〜260%）。", "S");
+    expect(kaiten.healSelf).toBe(false);
+    expect(kaiten.healCount).toBe(1);
+    expect(kaiten.healStatIdx).toBe(2); // 無指定は知略
+    const all = parseTactic("テスト全体", "能動", "40%", "自軍全体の兵力を回復（回復率96%、知略依存）", "S");
+    expect(all.healCount).toBe(3);
+    const multi = parseTactic("テスト複数", "能動", "40%", "自軍複数（2名）を回復し（回復率76%、知略依存）", "S");
+    expect(multi.healCount).toBe(2);
+  });
+  it("parses Hizen-no-Kuma style on-hit counter damage as a trigger, not an active nuke", () => {
+    const parsed = parseTactic("肥前の熊", "受動", "100%", "3ターン目終了まで、自身の被ダメージが24%低下（統率依存）。自身が兵刃ダメージを受けるたびに、30%の確率（統率依存、戦闘不能の友軍武将が増えるほど低下）で敵軍複数（2名）に兵刃ダメージ（ダメージ率70%、さらに統率依存）", "S");
+    expect(parsed.reactDmg).toEqual({ onType: "兵刃", chance: 0.3, type: "兵刃", rate: 70, targets: 2 });
+    expect(parsed.dmg).toEqual([]);
+  });
+  it("parses Engo-Shageki as a guard grant instead of a regular attack", () => {
+    const parsed = parseTactic("援護射撃", "能動", "40%", "1ターンの間、友軍単体が30%の回避を獲得。また、対象が初めてダメージを受けた際に自身が攻撃者に兵刃ダメージ（ダメージ率162%、武勇と統率依存）", "S");
+    expect(parsed.guardRate).toBe(162);
+    expect(parsed.dmg).toEqual([]);
+    expect(parsed.reactive).toBe(false);
+  });
+  it("Takumokucho's blade hit is dealt by the highest-Wuyou ally, not Yamamoto Kansuke", () => {
+    const squad = { ...emptySquad(), generals: ["g-武田信玄", "g-山本勘助", "g-北条氏康"] };
+    const foe = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"] };
+    let bladeActor = "";
+    for (let i = 0; i < 40 && !bladeActor; i++) {
+      const rep = runSimulation(squad, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      const hit = rep?.logs.find(l => l.tacticName === "啄木鳥" && (l.damage ?? 0) > 0 && l.actor !== "山本勘助");
+      if (hit) bladeActor = hit.actor;
+    }
+    expect(bladeActor).not.toBe("");
+    expect(bladeActor).not.toBe("山本勘助");
   });
   it("heals Baba Nobuharu through his inherent Oni-Mino when he is hit", () => {
     const squad = { ...emptySquad(), generals: ["g-馬場信春", "g-山本勘助", "g-武田信玄"] };
