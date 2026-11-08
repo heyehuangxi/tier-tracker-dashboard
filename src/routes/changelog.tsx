@@ -1,1 +1,75 @@
-aW1wb3J0IHsgY3JlYXRlRmlsZVJvdXRlIH0gZnJvbSAiQHRhbnN0YWNrL3JlYWN0LXJvdXRlciI7CmltcG9ydCB7IEFwcFNoZWxsIH0gZnJvbSAiQC9jb21wb25lbnRzL3RpZXIvYXBwLXNoZWxsIjsKCmV4cG9ydCBjb25zdCBSb3V0ZSA9IGNyZWF0ZUZpbGVSb3V0ZSgiL2NoYW5nZWxvZyIpKHsKICBoZWFkOiAoKSA9PiAoeyBtZXRhOiBbCiAgICB7IHRpdGxlOiAi5pu05paw5bGl5q20IHwg55yf5oim5Yud546H5ris5a6aIiB9LAogICAgeyBuYW1lOiAiZGVzY3JpcHRpb24iLCBjb250ZW50OiAi55yf5oim5Yud546H5ris5a6a44Gu5pu05paw5bGl5q2044Gn44GZ44CC5pel5LuY44GU44Go44Gr5aSJ5pu054K544KS5o6y6LyJ44GX44Gm44GE44G+44GZ44CCIiB9LAogICAgeyBwcm9wZXJ0eTogIm9nOnRpdGxlIiwgY29udGVudDogIuabtOaWsOWxpeattCB8IOecn+aIpuWLneeOh+a4rOWumiIgfSwKICAgIHsgcHJvcGVydHk6ICJvZzpkZXNjcmlwdGlvbiIsIGNvbnRlbnQ6ICLml6Xku5jjgZTjgajjga7lpInmm7TngrnjgpLmjrLovInjgZfjgabjgYTjgb7jgZnjgIIiIH0sCiAgICB7IHByb3BlcnR5OiAib2c6dHlwZSIsIGNvbnRlbnQ6ICJ3ZWJzaXRlIiB9LAogICAgeyBuYW1lOiAidHdpdHRlcjpjYXJkIiwgY29udGVudDogInN1bW1hcnkiIH0sCiAgXSB9KSwKICBjb21wb25lbnQ6ICgpID0+IDxBcHBTaGVsbCB0aXRsZT0i5pu05paw5bGl5q20IiBkZXNjcmlwdGlvbj0i5pel5LuY44GU44Go44Gr5aSJ5pu054K544KS44G+44Go44KB44Gm44GE44G+44GZ44CC5paw44GX44GE6aCG44Gr5Lim44KT44Gn44GE44G+44GZ44CCIj48Q2hhbmdlbG9nIC8+PC9BcHBTaGVsbD4sCn0pOwoKdHlwZSBFbnRyeSA9IHsgZGF0ZTogc3RyaW5nOyBpdGVtczogc3RyaW5nW10gfTsKCi8qKiDmm7TmlrDlsaXmrbTvvIjmlrDjgZfjgYTpoIbvvInjgILmraPnorrjgavnorroqo3jgafjgY3jgovlpInmm7Tjga7jgb/jgpLovInjgZvjgovjgIIgKi8KY29uc3QgRU5UUklFUzogRW50cnlbXSA9IFsKICB7CiAgICBkYXRlOiAiMjAyNuW5tDEx5pyIOOaXpSIsCiAgICBpdGVtczogWwogICAgICAi44K144Kk44OI5ZCN44KS44CM44G044GI44KT44Gn5YCZ44CN44GL44KJ44CM55yf5oim5Yud546H5ris5a6a44CN44Gr5aSJ5pu044GX44G+44GX44Gf77yI5LiA6ZaA44Gu44G/44Gq44GV44KT44Gr44KC5L2/44Gj44Gm44KC44KJ44GG44Gf44KB77yJ44CCIiwKICAgICAgIuOCteOCpOODiOOBruOCouOCpOOCs+ODs+OCkuOAjuS/oemVt+OBrumHjuacmyDnnJ/miKbjgI/jga7jg63jgrTjgavlpInmm7TjgZfjgb7jgZfjgZ/jgIIiLAogICAgICAi5pu05paw5bGl5q2044Oa44O844K477yI44GT44Gu44Oa44O844K477yJ44KS6L+95Yqg44GX44G+44GX44Gf44CCIiwKICAgICAgIuWFteeoruODrOODmeODq+OBruS4iumZkOOCkuWun+aIpuOBq+WQiOOCj+OBm+OBpuS/ruato+OBl+OBvuOBl+OBn++8iOS4iumZkDEx44CB5LiK6ZmQ44GM5LiK44GM44KL54m55oCn44GM44GC44KL5aC05ZCI44GvMTLvvInjgIIiLAogICAgICAi5oim5rOV44CM5pmC44Gv5LuK44CN44Gu57aZ57aa44OA44Oh44O844K477yI54Gr5YK344O75rC05pS744KB44O75Lit5q+S44Gq44Gp77yJ44GM44K344Of44Ol44Os44O844K344On44Oz44Gr5Y+N5pig44GV44KM44Gm44GE44Gq44GL44Gj44Gf5ZWP6aGM44KS5L+u5q2j44GX44G+44GX44Gf44CCIiwKICAgICAgIuOAjOmsvOe+jua/g+OAjeOBruWbnuW+qemHj+OBjOacrOadpeOBruS+neWtmOOCueODhuODvOOCv+OCue+8iOe1seeOh++8ieOBp+OBr+OBquOBj+efpeeVpeOBp+ioiOeul+OBleOCjOOBpuOBhOOBn+WVj+mhjOOCkuS/ruato+OBl+OBvuOBl+OBn+OAgiIsCiAgICAgICLlhajmiKbms5Xjga7mlofpnaLjgajjgrfjg5/jg6Xjg6zjg7zjgrfjg6fjg7PlhoXlrrnjga7nhaflkIjjgpLooYzjgYTjgIHlm57lvqnmiKbms5Xjga7lr77osaHjgajkvp3lrZjjgrnjg4bjg7zjgr/jgrnjgpLmlofpnaLjganjgYrjgorjgavkv67mraPjgZfjgb7jgZfjgZ/vvIjjgIzoh6rouqvjgpLlm57lvqnjgI3jga/oh6rouqvjga7jgb/jgIHlhajkvZPlm57lvqnjga8z5ZCN44CB5q2m5YuH44O757Wx546H5L6d5a2Y44Gu5Zue5b6p44Gv44Gd44Gu6IO95Yqb44Gn6KiI566X77yJ44CCIiwKICAgICAgIuOAjOWVhOacqOmzpeOAjeOBruWFteWIg+ODgOODoeODvOOCuOOCkuOAgeaJgOaMgeiAheOBp+OBr+OBquOBj+atpuWLh+OBjOacgOOCgumrmOOBhOWRs+aWueOBjOS4juOBiOOCi+OCiOOBhuS/ruato+OBl+OBvuOBl+OBn+OAgiIsCiAgICAgICLjgIzogqXliY3jga7nhorjgI3jga7lj43mkoPjgYzmr47jgr/jg7zjg7Pnmbrli5XjgZnjgovmlLvmkoPjgajjgZfjgabmibHjgo/jgozjgabjgYTjgZ/llY/poYzjgpLjgIHlhbXliIPjg4Djg6Hjg7zjgrjjgpLlj5fjgZHjgZ/jgajjgY3jga7lj43lv5znmbrli5Xjgavkv67mraPjgZfjgb7jgZfjgZ/jgIIiLAogICAgICAi44CM5o+06K235bCE5pKD44CN44GM44G+44Gj44Gf44GP55m65YuV44GX44Gq44GL44Gj44Gf5ZWP6aGM44KS5L+u5q2j44GX44G+44GX44Gf77yI5ZGz5pa544G444Gu5Zue6YG/5LuY5LiO44Go44CB5Yid44KB44Gm44OA44Oh44O844K444KS5Y+X44GR44Gf6Zqb44Gu5Y+N5pKD77yJ44CCIiwKICAgICAgIuOAjOe9teipiOmbkeiogOOAjeOBquOBqeOBruaMkeeZuuODu+WItuW+oeOBoOOBkeOCkuaMgeOBpOaMh+aPruODu+WPl+WLleaIpuazleOBjOeZuuWLleOBl+OBquOBi+OBo+OBn+WVj+mhjOOCkuS/ruato+OBl+OBvuOBl+OBn++8iOaMkeeZuuOBp+mAmuW4uOaUu+aSg+OBjOacrOS6uuOBq+mbhuS4reOBmeOCi+OCiOOBhuOBq+OBquOCiuOBvuOBme+8ieOAgiIsCiAgICAgICLjgIzotorlvozmtYHou43lrabjgI3jgYzmlbXjgavliLblvqHjgpLku5jkuI7jgZnjgovmiKbms5XjgajjgZfjgabmibHjgo/jgozjgabjgYTjgZ/llY/poYzjgpLkv67mraPjgZfjgb7jgZfjgZ/vvIjmlofpnaLjganjgYrjgorlkbPmlrnjgbjjga7ogJDmgKfku5jkuI7jga7miKbms5XjgafjgIHoh6rouqvjga7og73li5Xnmbrli5XnjocrMjAl44Go44GX44Gm5Y+N5pig77yJ44CCIiwKICAgICAgIuWItuW+oeOCkuOAjOOBhOOBmuOCjOOBizHnqK7jgI3ku5jkuI7jgZnjgovmiKbms5Xjga/jgIHlr77osaHjgZTjgajjgasx56iu44Gg44GR5LuY5LiO44GZ44KL44KI44GG5L+u5q2j44GX44G+44GX44Gf44CCIiwKICAgICAgIuWItuW+oeOBruWKueOBjeaWueOCkueoruWIpeOBlOOBqOOBq+S/ruato+OBl+OBvuOBl+OBn++8iOWwgeaSg+OBr+mAmuW4uOaUu+aSg+OBoOOBkeOCkuWwgeOBmOOAgeiDveWLleaIpuazleOChOS4gOaPhuOBruS7mOS4juOBr+atouOBvuOCieOBquOBhOOAgueEoeetluOBr+iDveWLleaIpuazleOBoOOBkeOCkuWwgeOBmOOCi++8ieOAgiIsCiAgICAgICLlvrPlt53lrrblurfpg6jpmorjgajjga7lrp/miKbmpJzoqLzjgpLlj5fjgZHjgabjgIHjgIzlj6Tku4rni6zmranjgI3jga7lj43mkoPjgYvjgonjgIzkuZfli53ov73mkoPjgI3jgarjganjga7nqoHmkoPjgYzpgKPpjpbjgZnjgovjgojjgYbkv67mraPjgZfjgb7jgZfjgZ/vvIjmlofpnaLjganjgYrjgorjga7mjJnli5XvvInjgIIiLAogICAgICAi44CM5LiJ5rKz6a2C44CN44KS5a6f6KOF44GX44G+44GX44Gf77yI5ZGz5pa544GM6YCa5bi45pS75pKD44KS5Y+X44GR44KL44Gf44Gz44CB5pS75pKD6ICF44Gu5YWo5bGe5oCn44GMMi41JeOBmuOBpOacgOWkpzjlm57jgb7jgafkvY7kuIvvvInjgIIiLAogICAgICAi5YW156iu5oim5rOV77yI6LaK5b6M5YWI5omL57WE44O75LiJ5rKz5q2m5aOr44O76YmE56Cy5YOn5YW144Gq44Gp77yJ44Gu44K544OG44O844K/44K55LiK5piH44GM5Y+N5pig44GV44KM44Gm44GE44Gq44GL44Gj44Gf5ZWP6aGM44KS5L+u5q2j44GX44G+44GX44Gf44CCIiwKICAgICAgIuOAjOaIruWKm+WQjOW/g+OAjeOBruWbnuW+qeWvvuixoeOCkuaWh+mdouOBqeOBiuOCiuOAjOiHqui6q+OBqOWPi+i7jeWNmOS9k+OAjeOBrjLlkI3jgavkv67mraPjgZfjgb7jgZfjgZ/jgIIiLAogICAgICAi5LiK6YOo44Oh44OL44Ol44O844KS5qiq44Gr44K544Ov44Kk44OX44GX44Gf44Go44GN44CB44Oa44O844K444G+44Gn5LiK5LiL44Gr5YuV44GE44Gm44GX44G+44GG5ZWP6aGM44KS5L+u5q2j44GX44G+44GX44Gf77yI44Oh44OL44Ol44O85YaF44Gv5bem5Y+z44K544Kv44Ot44O844Or44Gu44G/77yJ44CCIiwKICAgICAgIua4rOWumueUqOODhuODs+ODl+ODrOODvOODiOmDqOmaiuOBruWFteiIjkx244KSNeOBq+e1seS4gOOBl+OBvuOBl+OBn++8iOWFteeoruODrOODmeODq+OBr+OAjDXvvIvnibnmgKfjga7lkIjoqIjjgI3jgavjgarjgorjgb7jgZnvvInjgILog73lipvliIbphY3jga/jg4bjg7Pjg5fjg6zjg7zjg4jlgbTjgafjga/kuIDml6bjgarjgZfvvIgw77yJ44Gr44GX44Gm44GE44G+44GZ44CCIiwKICAgIF0sCiAgfSwKICB7CiAgICBkYXRlOiAiMjAyNuW5tDEx5pyIN+aXpSIsCiAgICBpdGVtczogWwogICAgICAi5YW156iu44Os44OZ44Or44Gr5a++5b+c44GX44G+44GX44Gf44CC6YOo6ZqK44Gu54m55oCn44GL44KJ5YW156iu44Os44OZ44Or44KS6Ieq5YuV44Gn566X5Ye644GX44CB6Kmz57Sw5oim5aCx44Gr6KGo56S644GX44G+44GZ44CC44K544OG44O844K/44K56KOc5q2j77yI5YWo6IO95YqbKzIl77yPTHbvvInjgoLjgrfjg5/jg6Xjg6zjg7zjgrfjg6fjg7Pjgavlj43mmKDjgZfjgabjgYTjgb7jgZnjgIIiLAogICAgICAi5YW16IiOTHbjgajplovlp4vlhbXlipvjgpLjgIHnt6jmiJDjgqjjg4fjgqPjgr/jgaflhaXlipvjgafjgY3jgovjgojjgYbjgavjgZfjgb7jgZfjgZ/jgILlrp/pmpvjga7miKbloLHjga7mnaHku7bvvIjnm7jmiYvjga7plovlp4vlhbXlipvjgYzmuJvjgaPjgabjgYTjgovloLTlkIjjgarjganvvInjgavlkIjjgo/jgZvjgabmuKzlrprjgafjgY3jgb7jgZnjgIIiLAogICAgICAi5oim5rOV44Gu5YaN54++5bqm44KS5pS55ZaE44GX44G+44GX44Gf44CC5LiD5Y2B5LqM44Gu6KiI77yI55m65YuV44Gu5pWw44GI5pa544KS5LuV5qeY44Gp44GK44KK44Gr77yJ44CB5LiA5o+G77yI5aSW44KM44KL44Gf44Gz44Gu55m65YuV546H44Gu5Ly444Gz5pa577yJ44CB6aKo5p6X54Gr5bGx77yI5peX44Gu5Yq55p6c44GMMuOCv+ODvOODs+OBqOOCgueZuuWLle+8ieOAgemsvOe+jua/g++8iOODgOODoeODvOOCuOOCkuWPl+OBkeOBn+OBqOOBjeOBruWbnuW+qeOCkuWGjeePvu+8ieOAgiIsCiAgICAgICLlrp/pmpvjga7lr77miKbmiKbloLE05Lu244Go44K344Of44Ol44Os44O844K344On44Oz57WQ5p6c44KS56qB44GN5ZCI44KP44Gb44Gm5qSc6Ki844GX44CB5Yud546H44Gu44K644Os44KS6KOc5q2j44GX44G+44GX44Gf44CCIiwKICAgIF0sCiAgfSwKICB7CiAgICBkYXRlOiAiMjAyNuW5tDEw5pyIMzHml6UiLAogICAgaXRlbXM6IFsKICAgICAgIuOCteOCpOODiOOCkuODquODi+ODpeODvOOCouODq+OBl+OBvuOBl+OBn+OAguODhOODvOODq+OBruWQjeensOOCkuOAjOWLneeOh+a4rOWumuOAjeOAjOWLneeOh+a4rOWummxpZ2h044CN44Gr5aSJ5pu044GX44CB44OH44K244Kk44Oz44KS5ZKM57SZ44Go5aKo44Go5pyx44Gu5piO44KL44GE44OG44O844Oe44Gr5Yi35paw44GX44G+44GX44Gf44CCIiwKICAgIF0sCiAgfSwKXTsKCmZ1bmN0aW9uIENoYW5nZWxvZygpIHsKICByZXR1cm4gPGRpdiBjbGFzc05hbWU9InNwYWNlLXktNSI+CiAgICB7RU5UUklFUy5tYXAoZSA9PiAoCiAgICAgIDxzZWN0aW9uIGtleT17ZS5kYXRlfSBjbGFzc05hbWU9InBhbmVsIHAtNSI+CiAgICAgICAgPGgyIGNsYXNzTmFtZT0idGV4dC1bMTdweF0iPntlLmRhdGV9PC9oMj4KICAgICAgICA8dWwgY2xhc3NOYW1lPSJtdC0zIGxpc3QtZGlzYyBzcGFjZS15LTIgcGwtNSB0ZXh0LVsxM3B4XSBsZWFkaW5nLXJlbGF4ZWQiPgogICAgICAgICAge2UuaXRlbXMubWFwKChpdGVtLCBpKSA9PiA8bGkga2V5PXtpfT57aXRlbX08L2xpPil9CiAgICAgICAgPC91bD4KICAgICAgPC9zZWN0aW9uPgogICAgKSl9CiAgPC9kaXY+Owp9Cg==
+import { createFileRoute } from "@tanstack/react-router";
+import { AppShell } from "@/components/tier/app-shell";
+
+export const Route = createFileRoute("/changelog")({
+  head: () => ({ meta: [
+    { title: "更新履歴 | 真戦勝率測定" },
+    { name: "description", content: "真戦勝率測定の更新履歴です。日付ごとに変更点を掲載しています。" },
+    { property: "og:title", content: "更新履歴 | 真戦勝率測定" },
+    { property: "og:description", content: "日付ごとの変更点を掲載しています。" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
+  component: () => <AppShell title="更新履歴" description="日付ごとに変更点をまとめています。新しい順に並んでいます。"><Changelog /></AppShell>,
+});
+
+type Entry = { date: string; items: string[] };
+
+/** 更新履歴（新しい順）。正確に確認できる変更のみを載せる。 */
+const ENTRIES: Entry[] = [
+  {
+    date: "2026年11月8日",
+    items: [
+      "サイト名を「ぴえんで候」から「真戦勝率測定」に変更しました（一門のみなさんにも使ってもらうため）。",
+      "サイトのアイコンを『信長の野望 真戦』のロゴに変更しました。",
+      "更新履歴ページ（このページ）を追加しました。",
+      "兵種レベルの上限を実戦に合わせて修正しました（上限11、上限が上がる特性がある場合は12）。",
+      "戦法「時は今」の継続ダメージ（火傷・水攻め・中毒など）がシミュレーションに反映されていなかった問題を修正しました。",
+      "「鬼美濃」の回復量が本来の依存ステータス（統率）ではなく知略で計算されていた問題を修正しました。",
+      "全戦法の文面とシミュレーション内容の照合を行い、回復戦法の対象と依存ステータスを文面どおりに修正しました（「自身を回復」は自身のみ、全体回復は3名、武勇・統率依存の回復はその能力で計算）。",
+      "「啄木鳥」の兵刃ダメージを、所持者ではなく武勇が最も高い味方が与えるよう修正しました。",
+      "「肥前の熊」の反撃が毎ターン発動する攻撃として扱われていた問題を、兵刃ダメージを受けたときの反応発動に修正しました。",
+      "「援護射撃」がまったく発動しなかった問題を修正しました（味方への回避付与と、初めてダメージを受けた際の反撃）。",
+      "「罵詈雑言」などの挑発・制御だけを持つ指揮・受動戦法が発動しなかった問題を修正しました（挑発で通常攻撃が本人に集中するようになります）。",
+      "「越後流軍学」が敵に制御を付与する戦法として扱われていた問題を修正しました（文面どおり味方への耐性付与の戦法で、自身の能動発動率+20%として反映）。",
+      "制御を「いずれか1種」付与する戦法は、対象ごとに1種だけ付与するよう修正しました。",
+      "制御の効き方を種別ごとに修正しました（封撃は通常攻撃だけを封じ、能動戦法や一揆の付与は止まらない。無策は能動戦法だけを封じる）。",
+      "徳川家康部隊との実戦検証を受けて、「古今独歩」の反撃から「乗勝追撃」などの突撃が連鎖するよう修正しました（文面どおりの挙動）。",
+      "「三河魂」を実装しました（味方が通常攻撃を受けるたび、攻撃者の全属性が2.5%ずつ最大8回まで低下）。",
+      "兵種戦法（越後先手組・三河武士・鉄砲僧兵など）のステータス上昇が反映されていなかった問題を修正しました。",
+      "「戮力同心」の回復対象を文面どおり「自身と友軍単体」の2名に修正しました。",
+      "上部メニューを横にスワイプしたとき、ページまで上下に動いてしまう問題を修正しました（メニュー内は左右スクロールのみ）。",
+      "測定用テンプレート部隊の兵舎Lvを5に統一しました（兵種レベルは「5＋特性の合計」になります）。",
+      "テンプレート部隊の能力分配を指定どおりに設定しました（知略全振り・統率全振りなど。未指定の武将は分配なし）。",
+      "特性「方円の器」の知略上昇が+50%として効いてしまう問題を修正しました（本来は+5%）。",
+    ],
+  },
+  {
+    date: "2026年11月7日",
+    items: [
+      "兵種レベルに対応しました。部隊の特性から兵種レベルを自動で算出し、詳細戦報に表示します。ステータス補正（全能力+2%／Lv）もシミュレーションに反映しています。",
+      "兵舎Lvと開始兵力を、編成エディタで入力できるようにしました。実際の戦報の条件（相手の開始兵力が減っている場合など）に合わせて測定できます。",
+      "戦法の再現度を改善しました。七十二の計（発動の数え方を仕様どおりに）、一揆（外れるたびの発動率の伸び方）、風林火山（旗の効果が2ターンとも発動）、鬼美濃（ダメージを受けたときの回復を再現）。",
+      "実際の対戦戦報4件とシミュレーション結果を突き合わせて検証し、勝率のズレを補正しました。",
+    ],
+  },
+  {
+    date: "2026年10月31日",
+    items: [
+      "サイトをリニューアルしました。ツールの名称を「勝率測定」「勝率測定light」に変更し、デザインを和紙と墨と朱の明るいテーマに刷新しました。",
+    ],
+  },
+];
+
+function Changelog() {
+  return <div className="space-y-5">
+    {ENTRIES.map(e => (
+      <section key={e.date} className="panel p-5">
+        <h2 className="text-[17px]">{e.date}</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-[13px] leading-relaxed">
+          {e.items.map((item, i) => <li key={i}>{item}</li>)}
+        </ul>
+      </section>
+    ))}
+  </div>;
+}

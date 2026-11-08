@@ -459,6 +459,21 @@ describe("Reactive healing （反応回復）", () => {
     expect(bladeActor).not.toBe("");
     expect(bladeActor).not.toBe("山本勘助");
   });
+  it("Houen no Utsuwa grants +5% Chiryaku to the squad, not its 50% proc chance", () => {
+    const sq = { ...emptySquad(), generals: ["g-黒田官兵衛", "g-立花誾千代", "g-北条氏康"] };
+    const eff = squadTraitEffects(sq);
+    // 黒田官兵衛の素の知略229 → +5% = 240（+50%なら344になる）
+    expect(eff[0]?.stats[2]).toBe(240);
+    expect(eff[1]?.stats[2]).toBe(143);
+  });
+  it("template squads use the specified alloc weights and facility level 5", () => {
+    const t1 = templateToSquad(TEMPLATES[0]!, [0, 0, 0]);
+    expect(t1.facLv).toBe(5);
+    expect(t1.alloc).toEqual([[0, 0, 50, 0], [0, 0, 50, 0], [50, 0, 0, 0]]);
+    const t5 = templateToSquad(TEMPLATES[4]!, [0, 0, 0]);
+    expect(t5.alloc?.[0]).toEqual([0, 20, 30, 0]); // 武田信玄: 武勇4割・知略6割
+    expect(t5.alloc?.[1]).toEqual([50, 0, 0, 0]); // 馬場信春: 統率全振り
+  });
   it("Rikiryoku Doshin heals self plus one ally (自身と友軍単体)", () => {
     const s = parseTactic("戮力同心", "指揮", "100%", "毎ターン17%〜34%の確率で自身と友軍単体の兵力を回復（回復率41%〜82%）。");
     expect(s.healSelf).toBe(true);
