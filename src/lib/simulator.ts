@@ -75,7 +75,7 @@ export function weaponBase(atkWu: number, defTong: number, troops: number, multi
 type DmgKind = "兵刃" | "計略";
 type StatModSpec = { idx: number; amount: number };
 type DotSpec = { kind: string; rate: number; type: DmgKind };
-type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; typeBuffs: { type: DmgKind; delta: number }[]; kindBuffs: { kind: string; delta: number; inherentOnly: boolean }[]; naBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; typeTaken: { type: DmgKind; delta: number }[]; kindTaken: { kind: string; delta: number }[]; naTaken: number; dots: DotSpec[]; dotChance: number; dotPickOne: boolean; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined; reactive: boolean; targetLeader: boolean; reactHeal?: { chance: number; rate: number } | undefined };
+type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; typeBuffs: { type: DmgKind; delta: number }[]; kindBuffs: { kind: string; delta: number; inherentOnly: boolean }[]; naBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; typeTaken: { type: DmgKind; delta: number }[]; kindTaken: { kind: string; delta: number }[]; naTaken: number; dots: DotSpec[]; dotChance: number; dotPickOne: boolean; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined; reactive: boolean; targetLeader: boolean; reactHeal?: { chance: number; rate: number; statIdx: number } | undefined };
 export type { TSpec };
 const maxPct = (re: RegExp, e: string) => { const m = e.match(re); return m ? Number(m[m.length - 1]) : 0; };
 const STAT_IDX: Record<string, number> = { 統率: 0, 武勇: 1, 知略: 2, 速度: 3 };
@@ -100,7 +100,9 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const heal = maxPct(/回復(?:率)?[（(](?:毎ターン)?(?:回復率)?(?:[\d.]+%[〜→])?([\d.]+)%/, e);
   // 反応回復（鬼美濃など）: 「ダメージを受けると、N%の確率で…自身の兵力を回復（回復率M%）」は毎ターン回復ではなく被弾トリガーで処理する
   const reactHealM = e.match(/ダメージを受け(?:る|た)(?:際|場合|時|と)、?([\d.]+)%の確率で[^。]*?回復（(?:回復率)?([\d.]+)%/);
-  const reactHeal = reactHealM ? { chance: Number(reactHealM[1]) / 100, rate: Number(reactHealM[2]) } : undefined;
+  // 回復の依存ステータスは回復カッコ内の「○○依存」から取る（鬼美濃は統率依存。無指定は知略）
+  const reactHealDep = e.match(/回復（[^）]*?(統率|武勇|知略)依存/);
+  const reactHeal = reactHealM ? { chance: Number(reactHealM[1]) / 100, rate: Number(reactHealM[2]), statIdx: reactHealDep ? STAT_LABELS.indexOf(reactHealDep[1] as typeof STAT_LABELS[number]) : 2 } : undefined;
   const grant: TSpec["grant"] = {};
   if (/休養/.test(e)) grant.休養 = maxPct(/休養[（(](?:毎ターン)?(?:回復率)?(?:[\d.]+%[〜→])?([\d.]+)%/, e) || 50;
   if (/回生/.test(e)) grant.回生 = 50;
@@ -524,7 +526,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     const rh = dst.specs.find(s => s.reactHeal);
     if (rh?.reactHeal && dst.troops > 0 && d > 0 && Math.random() < rh.reactHeal.chance) {
       cleanseUnit(dst, 99);
-      doHeal(dst, dst, rh.reactHeal.rate, turn, !mine, rh.name);
+      doHeal(dst, dst, rh.reactHeal.rate, turn, !mine, rh.name, rh.reactHeal.statIdx);
     }
     return d;
   };
