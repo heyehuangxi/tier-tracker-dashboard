@@ -4,9 +4,9 @@ import { FormationEditor } from "@/components/tier/formation-editor";
 
 export const Route = createFileRoute("/free")({
   head: () => ({ meta: [
-    { title: "自由編成 | ぴえんで候" },
+    { title: "自由編成 | 真戦勝率測定" },
     { name: "description", content: "全武将・全戦法から自由に最大10部隊を編成します。" },
-    { property: "og:title", content: "自由編成 | ぴえんで候" },
+    { property: "og:title", content: "自由編成 | 真戦勝率測定" },
     { property: "og:description", content: "未所持を含む全武将・戦法で自由に編成。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
