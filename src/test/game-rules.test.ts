@@ -396,6 +396,37 @@ describe("Reactive healing （反応回復）", () => {
     expect(parsed.dmg).toEqual([]);
     expect(parsed.reactive).toBe(false);
   });
+  it("parses pick-one control tactics", () => {
+    const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+    expect(P("風姿綽約").ctrlPickOne).toBe(true);
+    expect(P("津田流砲術").ctrlPickOne).toBe(true);
+    expect(P("罵詈雑言").ctrlPickOne).toBe(false);
+  });
+  it("Echigo-ryu Gungaku grants no enemy control (its control names are resistances)", () => {
+    const squad = { ...emptySquad(), generals: ["g-上杉謙信", "g-真田昌幸", "g-宇佐美定満"] };
+    const foe = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"] };
+    for (let i = 0; i < 5; i++) {
+      const rep = runSimulation(squad, [{ label: "t", squad: foe }], 20).perOpponent[0]?.report;
+      expect(rep?.logs.some(l => l.tacticName === "越後流軍学")).toBe(false);
+    }
+  });
+  it("parses Bari-Zougen taunt with its turn limit", () => {
+    const parsed = parseTactic("罵詈雑言", "指揮", "100%", "3ターン目まで、敵軍複数に挑発を付与し、自身の通常・突撃被ダメージが25%〜50%低下。", "S");
+    expect(parsed.taunt).toBe(true);
+    expect(parsed.targets).toBe(2);
+    expect(parsed.auraUntil).toBe(2);
+  });
+  it("taunt draws enemy normal attacks onto the taunt holder", () => {
+    const ally = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"] };
+    const foe = { ...emptySquad(), generals: ["g-武田信玄", "g-馬場信春", "g-真田昌幸"], tactics: [null, null, "t-罵詈雑言", null, null, null] };
+    let onHolder = 0, total = 0;
+    for (let i = 0; i < 60; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) if (l.kind === "通常攻撃" && l.actorSide === "自軍") { total++; if (l.target === "馬場信春") onHolder++; }
+    }
+    expect(total).toBeGreaterThan(100);
+    expect(onHolder / total).toBeGreaterThan(0.45);
+  });
   it("Takumokucho's blade hit is dealt by the highest-Wuyou ally, not Yamamoto Kansuke", () => {
     const squad = { ...emptySquad(), generals: ["g-武田信玄", "g-山本勘助", "g-北条氏康"] };
     const foe = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"] };
