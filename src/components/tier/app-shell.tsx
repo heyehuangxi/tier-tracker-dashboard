@@ -13,10 +13,10 @@ export function AppShell({ title, description, children }: { title: string; desc
   return <NoticeCtx.Provider value={setNotice}><div className="min-h-screen">
     <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-md">
       <div className="content-wrap flex h-[68px] items-center gap-3 px-4 sm:px-6">
-        <a href="/" className="flex min-w-0 items-center gap-3" aria-label="ぴえんで候 トップへ">
-          <span className="brand-seal" aria-hidden="true">ぴ</span>
+        <a href="/" className="flex min-w-0 items-center gap-3" aria-label="真戦勝率測定 トップへ">
+          <img src="/icon.svg" alt="" aria-hidden="true" className="size-[42px] shrink-0 rounded-[4px] object-cover" />
           <span className="min-w-0">
-            <span className="block truncate font-display text-[21px] font-bold leading-tight tracking-[0.06em]">ぴえんで候</span>
+            <span className="block truncate font-display text-[21px] font-bold leading-tight tracking-[0.06em]">真戦勝率測定</span>
             <span className="block text-[9.5px] tracking-[0.28em] text-muted-foreground">SENGOKU LAB — 真戦・編成考査</span>
           </span>
         </a>
@@ -43,7 +43,7 @@ export function AppShell({ title, description, children }: { title: string; desc
     <footer className="content-wrap px-4 pb-8 sm:px-6">
       <div className="border-t border-border pt-4">
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          本サイト「ぴえんで候」は『信長の野望 真戦』の非公式ファンツールです。ゲーム公式とは関係ありません。シミュレーション結果は試算であり、実際の戦闘結果を保証するものではありません。所持・編成などのデータはお使いのブラウザ内（localStorage）にのみ保存され、サーバーへ送信されることはありません。
+          本サイト「真戦勝率測定」は『信長の野望 真戦』の非公式ファンツールです。ゲーム公式とは関係ありません。シミュレーション結果は試算であり、実際の戦闘結果を保証するものではありません。所持・編成などのデータはお使いのブラウザ内（localStorage）にのみ保存され、サーバーへ送信されることはありません。
         </p>
       </div>
     </footer>
