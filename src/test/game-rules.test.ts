@@ -354,3 +354,21 @@ describe("Troop level （兵種レベル）", () => {
     expect(report?.logs.some(l => l.turn === 0 && l.segments.some(s => s.text.includes("騎兵Lv8")))).toBe(true);
   });
 });
+
+describe("Reactive healing （反応回復）", () => {
+  it("parses Oni-Mino style on-hit healing as a trigger, not a per-turn heal", () => {
+    const parsed = parseTactic("鬼美濃", "受動", "100%", "ダメージを受けると、35%の確率で自身の弱体化効果を浄化し、自身の兵力を回復（回復率112%、統率依存）", "S");
+    expect(parsed.reactHeal).toEqual({ chance: 0.35, rate: 112 });
+    expect(parsed.heal).toBe(0);
+  });
+  it("heals Baba Nobuharu through his inherent Oni-Mino when he is hit", () => {
+    const squad = { ...emptySquad(), generals: ["g-馬場信春", "g-山本勘助", "g-武田信玄"] };
+    const foe = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"] };
+    let total = 0;
+    for (let i = 0; i < 5; i++) {
+      const rep = runSimulation(squad, [{ label: "t", squad: foe }], 20).perOpponent[0]?.report;
+      total += rep?.logs.filter(l => l.tacticName === "鬼美濃").reduce((s, l) => s + (l.heal ?? 0), 0) ?? 0;
+    }
+    expect(total).toBeGreaterThan(0);
+  });
+});
