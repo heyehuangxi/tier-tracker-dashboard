@@ -396,6 +396,26 @@ describe("Reactive healing （反応回復）", () => {
     expect(parsed.dmg).toEqual([]);
     expect(parsed.reactive).toBe(false);
   });
+  it("Fuuji (sealed normal attacks) blocks only normal attacks, not active tactics", () => {
+    const foe = { ...emptySquad(), generals: ["g-明智光秀", "g-北条氏康", "g-武田信玄"], tactics: ["t-嚢沙之計", null, null, null, null, null] };
+    const withSeal = { ...emptySquad(), generals: ["g-本願寺顕如", "g-長宗我部元親", "g-島津貴久"], tactics: [null, null, "t-一刀両断", "t-気炎万丈", null, null] };
+    const noSeal = { ...emptySquad(), generals: ["g-本願寺顕如", "g-長宗我部元親", "g-島津貴久"], tactics: [null, null, "t-一刀両断", null, null, null] };
+    const count = (ally: typeof withSeal) => {
+      let tactics = 0, nas = 0;
+      for (let i = 0; i < 60; i++) {
+        const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+        for (const l of rep?.logs ?? []) {
+          if (l.actor !== "明智光秀" || l.turn > 3) continue;
+          if (l.kind === "戦法") tactics++;
+          if (l.kind === "通常攻撃") nas++;
+        }
+      }
+      return { tactics, nas };
+    };
+    const sealed = count(withSeal), control = count(noSeal);
+    expect(sealed.tactics).toBeGreaterThan(control.tactics * 0.6); // 能動は封撃でも止まらない
+    expect(sealed.nas).toBeLessThan(control.nas); // 通常攻撃は減る
+  });
   it("parses pick-one control tactics", () => {
     const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
     expect(P("風姿綽約").ctrlPickOne).toBe(true);
