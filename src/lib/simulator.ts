@@ -19,7 +19,8 @@ const RAW = `豊臣/弓|黒田官兵衛:七十二の計,紅蓮の炎:知略|豊�
 群雄/鉄砲|伊達政宗:攻其不備,竜騎兵:武勇,知略|真田昌幸:回天転運,瞬息万変:知略|北条氏康:戮力同心,知者楽水:統率
 群雄/鉄砲|真田昌幸:回天転運,瞬息万変:知略|伊達政宗:攻其不備,竜騎兵:武勇,知略|帰蝶:恵風和雨,会盟の陣:知略
 群雄/鉄砲|本願寺顕如:七十二の計,紅蓮の炎:知略|真田昌幸:深慮遠謀,草木皆兵:知略|三好実休:回天転運,瞬息万変:知略
-上杉/足軽|柿崎景家:縦横馳突,乗勝追撃:武勇|長野業正:戮力同心,三河武士:統率|宇佐美定満:直諫敢行,追い崩し:知略`;
+上杉/足軽|柿崎景家:縦横馳突,乗勝追撃:武勇|長野業正:戮力同心,三河武士:統率|宇佐美定満:直諫敢行,追い崩し:知略
+上杉/騎兵|柿崎景家:縦横馳突,乗勝追撃:武勇|上杉謙信:勇猛無比,越後先手組:武勇|宇佐美定満:追い崩し,直諫敢行:知略`;
 
 export const TEMPLATES: Template[] = RAW.split("\n").map(line => {
   const [head = "", ...ms] = line.split("|");
@@ -49,6 +50,18 @@ const TEMPLATE_ALLOC: Record<string, [number, number, number, number]> = {
   "武田信玄": [0, 0.4, 0.6, 0], "馬場信春": [1, 0, 0, 0],
   "北条綱成": [0, 0.5, 0, 0.5], "柿崎景家": [0, 0.5, 0, 0.5],
   "福島正則": [0, 1, 0, 0],
+  "山本勘助": [0, 0, 0.7, 0.3], "伊達政宗": [0, 0.45, 0.55, 0], "三好実休": [0, 0, 1, 0],
+  "本願寺顕如": [0, 0, 1, 0], "長野業正": [1, 0, 0, 0], "宇佐美定満": [0, 0, 1, 0],
+};
+
+/** 特定テンプレートだけの分配上書き（行動順を速度で作る編成用）: 速度に固定ポイントを入れ、残りを rest のステータスへ */
+const TEMPLATE_ALLOC_OVERRIDE: Record<string, Record<string, { speed: number; rest: number }>> = {
+  // 行動順が 宇佐美定満 → 柿崎景家 → 上杉謙信 になる速度配分（0凸: 定満200・景家199・謙信196）
+  "[上杉/騎兵] 柿崎景家・上杉謙信・宇佐美定満": {
+    "柿崎景家": { speed: 6, rest: 1 },
+    "上杉謙信": { speed: 0, rest: 1 },
+    "宇佐美定満": { speed: 39, rest: 2 },
+  },
 };
 
 export function templateToSquad(t: Template, ranks: number[]): Squad {
@@ -61,6 +74,8 @@ export function templateToSquad(t: Template, ranks: number[]): Squad {
     facLv: 5,
     // 能力分配は TEMPLATE_ALLOC の指定どおり（総ポイントは凸数で決まる 50+10×凸）。指定のない武将は0
     alloc: t.members.map((m, i) => {
+      const ov = TEMPLATE_ALLOC_OVERRIDE[t.label]?.[m.name];
+      if (ov) { const total = pointsFor(ranks[i] ?? 0); const a = [0, 0, 0, 0]; a[3] = ov.speed; a[ov.rest] = (a[ov.rest] ?? 0) + (total - ov.speed); return a; }
       const w = TEMPLATE_ALLOC[m.name];
       if (!w) return [0, 0, 0, 0];
       const total = pointsFor(ranks[i] ?? 0);

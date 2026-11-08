@@ -29,7 +29,7 @@ describe("Troops, search and tactics", () => {
     expect(matchesName("戦意消沈", "荷")).toBe(false);
   });
   it("removes お初 and retains the new tactic with exact data", () => {
-    expect(TEMPLATES).toHaveLength(15);
+    expect(TEMPLATES).toHaveLength(16);
     expect(TEMPLATES.flatMap(t => t.members).some(m => m.name === "お初")).toBe(false);
     expect(tacticById.get("t-荷駄崩し")).toMatchObject({ grade: "S", kind: "能動", rate: "40%" });
     expect(tacticById.get("t-荷駄崩し")?.effect).toContain("64%→128%");
@@ -473,6 +473,22 @@ describe("Reactive healing （反応回復）", () => {
     const t5 = templateToSquad(TEMPLATES[4]!, [0, 0, 0]);
     expect(t5.alloc?.[0]).toEqual([0, 20, 30, 0]); // 武田信玄: 武勇4割・知略6割
     expect(t5.alloc?.[1]).toEqual([50, 0, 0, 0]); // 馬場信春: 統率全振り
+  });
+  it("remaining template alloc weights (Kansuke 3:7, Masamune 5.5:4.5)", () => {
+    const t8 = templateToSquad(TEMPLATES[7]!, [0, 0, 0]);
+    expect(t8.alloc?.[2]).toEqual([0, 0, 35, 15]); // 山本勘助: 知略35・速度15
+    const t11 = templateToSquad(TEMPLATES[10]!, [0, 0, 0]);
+    expect(t11.alloc?.[0]?.reduce((a, b) => a + b, 0)).toBe(50); // 伊達政宗
+    expect(t11.alloc?.[0]?.[2]).toBeGreaterThan(t11.alloc?.[0]?.[1] ?? 0);
+  });
+  it("Uesugi cavalry template acts in the order Sadamitsu, Kageie, Kenshin", () => {
+    const t16 = TEMPLATES[TEMPLATES.length - 1]!;
+    expect(t16.label).toContain("上杉/騎兵");
+    const sq = templateToSquad(t16, [0, 0, 0]);
+    expect(sq.alloc).toEqual([[0, 44, 0, 6], [0, 50, 0, 0], [0, 0, 11, 39]]);
+    const eff = squadTraitEffects(sq);
+    expect(eff[2]?.stats[3]).toBeGreaterThan(eff[0]?.stats[3] ?? 0);
+    expect(eff[0]?.stats[3]).toBeGreaterThan(eff[1]?.stats[3] ?? 0);
   });
   it("Rikiryoku Doshin heals self plus one ally (自身と友軍単体)", () => {
     const s = parseTactic("戮力同心", "指揮", "100%", "毎ターン17%〜34%の確率で自身と友軍単体の兵力を回復（回復率41%〜82%）。");
