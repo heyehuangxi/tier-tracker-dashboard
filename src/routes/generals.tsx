@@ -9,9 +9,9 @@ import { GENERALS, INHERENT_TACTICS, STAT_NAMES, traitFor, type General } from "
 
 export const Route = createFileRoute("/generals")({
   head: () => ({ meta: [
-    { title: "武将一覧 | ぴえんで候" },
+    { title: "武将一覧 | 真戦勝率測定" },
     { name: "description", content: "全武将の能力値（Lv50）・固有戦法・特性（金帯／凸解放）を一覧で確認できます。" },
-    { property: "og:title", content: "武将一覧 | ぴえんで候" },
+    { property: "og:title", content: "武将一覧 | 真戦勝率測定" },
     { property: "og:description", content: "全武将の能力値・固有戦法・特性を一覧で確認。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
