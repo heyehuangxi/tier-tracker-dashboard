@@ -1,1 +1,47 @@
-aW1wb3J0IHsgTGluaywgdXNlUm91dGVyU3RhdGUgfSBmcm9tICJAdGFuc3RhY2svcmVhY3Qtcm91dGVyIjsKCnR5cGUgSXRlbSA9IHsgbGFiZWw6IHN0cmluZzsgYmFkZ2U/OiBzdHJpbmc7IHRvPzogIi8iIHwgIi9jb2V4aXN0IiB8ICIvZnJlZSIgfCAiL2hvbGRpbmdzIiB8ICIvc2F2ZWQiIHwgIi9zaGFyZSIgfCAiL3RhY3RpY3MiIHwgIi90aWVyLWxpZ2h0IiB8ICIvZXhwbG9yZSIgfCAiL2dlbmVyYWxzIiB8ICIvdHJhaXRzIiB8ICIvY2hhbmdlbG9nIiB9Owpjb25zdCBpdGVtczogSXRlbVtdID0gWwogIHsgbGFiZWw6ICLli53njofmuKzlrpoiLCBiYWRnZTogIk5FVyIsIHRvOiAiLyIgfSwKICB7IGxhYmVsOiAi5Yud546H5ris5a6abGlnaHQiLCBiYWRnZTogIk5FVyIsIHRvOiAiL3RpZXItbGlnaHQiIH0sCiAgeyBsYWJlbDogIkFJ57eo5oiQ5o6i57SiIiwgYmFkZ2U6ICJORVciLCB0bzogIi9leHBsb3JlIiB9LAogIHsgbGFiZWw6ICLlhbHlrZjnt6jmiJAiLCB0bzogIi9jb2V4aXN0IiB9LAogIHsgbGFiZWw6ICLoh6rnlLHnt6jmiJAiLCB0bzogIi9mcmVlIiB9LAogIHsgbGFiZWw6ICLmiYDmjIHnrqHnkIYiLCB0bzogIi9ob2xkaW5ncyIgfSwKICB7IGxhYmVsOiAi5L+d5a2Y44GX44Gf57eo5oiQIiwgdG86ICIvc2F2ZWQiIH0sCiAgeyBsYWJlbDogIuWFseaciSIsIHRvOiAiL3NoYXJlIiB9LAogIHsgbGFiZWw6ICLmiKbms5XkuIDopqciLCB0bzogIi90YWN0aWNzIiB9LAogIHsgbGFiZWw6ICLmqKHmk6zlr77miKYiLCBiYWRnZTogIk5FVyIgfSwKICB7IGxhYmVsOiAi5q2m5bCG5LiA6KanIiwgdG86ICIvZ2VuZXJhbHMiIH0sCiAgeyBsYWJlbDogIuWxnuaAp+WApOODqeODs+OCreODs+OCsCIgfSwKICB7IGxhYmVsOiAi54m55oCn5LiA6KanIiwgdG86ICIvdHJhaXRzIiB9LAogIHsgbGFiZWw6ICLmm7TmlrDlsaXmrbQiLCBiYWRnZTogIk5FVyIsIHRvOiAiL2NoYW5nZWxvZyIgfSwKXTsKCi8qKiDkuIrpg6jjg4rjg5PjgrLjg7zjgrfjg6fjg7PvvIjmqKrkuKbjgbPvvInjgILmupblgpnkuK3poIXnm67jga8gb25TZWxlY3Qg44Gn6YCa55+l44GZ44KL44CCICovCmV4cG9ydCBmdW5jdGlvbiBUb3BOYXYoeyBvblNlbGVjdCwgb25OYXZpZ2F0ZSB9OiB7IG9uU2VsZWN0OiAobGFiZWw6IHN0cmluZykgPT4gdm9pZDsgb25OYXZpZ2F0ZT86ICgpID0+IHZvaWQgfSkgewogIGNvbnN0IHBhdGhuYW1lID0gdXNlUm91dGVyU3RhdGUoeyBzZWxlY3Q6IHMgPT4gcy5sb2NhdGlvbi5wYXRobmFtZSB9KTsKICByZXR1cm4gPG5hdiBhcmlhLWxhYmVsPSLjg6HjgqTjg7Pjg4rjg5PjgrLjg7zjgrfjg6fjg7MiIGNsYXNzTmFtZT0iZmxleCBpdGVtcy1jZW50ZXIgb3ZlcmZsb3cteC1hdXRvIG92ZXJmbG93LXktaGlkZGVuIFt0b3VjaC1hY3Rpb246cGFuLXhdIFtvdmVyc2Nyb2xsLWJlaGF2aW9yLXg6Y29udGFpbl0iPgogICAge2l0ZW1zLm1hcChpdGVtID0+IHsKICAgICAgY29uc3QgYWN0aXZlID0gaXRlbS50byA9PT0gcGF0aG5hbWU7CiAgICAgIGNvbnN0IGJhZGdlID0gaXRlbS5iYWRnZSA/IDxzcGFuIGNsYXNzTmFtZT0ibmV3LWJhZGdlIj57aXRlbS5iYWRnZX08L3NwYW4+IDogbnVsbDsKICAgICAgcmV0dXJuIGl0ZW0udG8KICAgICAgICA/IDxMaW5rIGtleT17aXRlbS5sYWJlbH0gdG89e2l0ZW0udG99IGNsYXNzTmFtZT0idG9wbmF2LWxpbmsiIGRhdGEtYWN0aXZlPXthY3RpdmV9IGFyaWEtY3VycmVudD17YWN0aXZlID8gInBhZ2UiIDogdW5kZWZpbmVkfSBvbkNsaWNrPXtvbk5hdmlnYXRlfT57aXRlbS5sYWJlbH17YmFkZ2V9PC9MaW5rPgogICAgICAgIDogPGJ1dHRvbiBrZXk9e2l0ZW0ubGFiZWx9IHR5cGU9ImJ1dHRvbiIgY2xhc3NOYW1lPSJ0b3BuYXYtbGluayIgb25DbGljaz17KCkgPT4geyBvblNlbGVjdChpdGVtLmxhYmVsKTsgb25OYXZpZ2F0ZT8uKCk7IH19PntpdGVtLmxhYmVsfXtiYWRnZX08L2J1dHRvbj47CiAgICB9KX0KICA8L25hdj47Cn0KCi8qKiDjg6Ljg5DjgqTjg6vnlKjjg4njg63jg6/jg7zlhoXjga7nuKbkuKbjgbPjg4rjg5PjgIIgKi8KZXhwb3J0IGZ1bmN0aW9uIE1vYmlsZU5hdih7IG9uU2VsZWN0LCBvbk5hdmlnYXRlIH06IHsgb25TZWxlY3Q6IChsYWJlbDogc3RyaW5nKSA9PiB2b2lkOyBvbk5hdmlnYXRlPzogKCkgPT4gdm9pZCB9KSB7CiAgY29uc3QgcGF0aG5hbWUgPSB1c2VSb3V0ZXJTdGF0ZSh7IHNlbGVjdDogcyA9PiBzLmxvY2F0aW9uLnBhdGhuYW1lIH0pOwogIHJldHVybiA8bmF2IGFyaWEtbGFiZWw9IuODoeOCpOODs+ODiuODk+OCsuODvOOCt+ODp+ODsyIgY2xhc3NOYW1lPSJmbGV4IGZsZXgtY29sIGdhcC0wLjUiPgogICAge2l0ZW1zLm1hcChpdGVtID0+IHsKICAgICAgY29uc3QgYWN0aXZlID0gaXRlbS50byA9PT0gcGF0aG5hbWU7CiAgICAgIGNvbnN0IGJhZGdlID0gaXRlbS5iYWRnZSA/IDxzcGFuIGNsYXNzTmFtZT0ibmV3LWJhZGdlIj57aXRlbS5iYWRnZX08L3NwYW4+IDogbnVsbDsKICAgICAgcmV0dXJuIGl0ZW0udG8KICAgICAgICA/IDxMaW5rIGtleT17aXRlbS5sYWJlbH0gdG89e2l0ZW0udG99IGNsYXNzTmFtZT0ibW9iaWxlbmF2LWxpbmsiIGRhdGEtYWN0aXZlPXthY3RpdmV9IGFyaWEtY3VycmVudD17YWN0aXZlID8gInBhZ2UiIDogdW5kZWZpbmVkfSBvbkNsaWNrPXtvbk5hdmlnYXRlfT57aXRlbS5sYWJlbH17YmFkZ2V9PC9MaW5rPgogICAgICAgIDogPGJ1dHRvbiBrZXk9e2l0ZW0ubGFiZWx9IHR5cGU9ImJ1dHRvbiIgY2xhc3NOYW1lPSJtb2JpbGVuYXYtbGluayIgb25DbGljaz17KCkgPT4geyBvblNlbGVjdChpdGVtLmxhYmVsKTsgb25OYXZpZ2F0ZT8uKCk7IH19PntpdGVtLmxhYmVsfXtiYWRnZX08L2J1dHRvbj47CiAgICB9KX0KICA8L25hdj47Cn0K
+import { Link, useRouterState } from "@tanstack/react-router";
+
+type Item = { label: string; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" | "/tactics" | "/tier-light" | "/explore" | "/generals" | "/traits" | "/changelog" };
+const items: Item[] = [
+  { label: "勝率測定", badge: "NEW", to: "/" },
+  { label: "勝率測定light", badge: "NEW", to: "/tier-light" },
+  { label: "AI編成探索", badge: "NEW", to: "/explore" },
+  { label: "共存編成", to: "/coexist" },
+  { label: "自由編成", to: "/free" },
+  { label: "所持管理", to: "/holdings" },
+  { label: "保存した編成", to: "/saved" },
+  { label: "共有", to: "/share" },
+  { label: "戦法一覧", to: "/tactics" },
+  { label: "模擬対戦", badge: "NEW" },
+  { label: "武将一覧", to: "/generals" },
+  { label: "属性値ランキング" },
+  { label: "特性一覧", to: "/traits" },
+  { label: "更新履歴", badge: "NEW", to: "/changelog" },
+];
+
+/** 上部ナビゲーション（横並び）。準備中項目は onSelect で通知する。 */
+export function TopNav({ onSelect, onNavigate }: { onSelect: (label: string) => void; onNavigate?: () => void }) {
+  const pathname = useRouterState({ select: s => s.location.pathname });
+  return <nav aria-label="メインナビゲーション" className="flex items-center overflow-x-auto overflow-y-hidden [touch-action:pan-x] [overscroll-behavior-x:contain]">
+    {items.map(item => {
+      const active = item.to === pathname;
+      const badge = item.badge ? <span className="new-badge">{item.badge}</span> : null;
+      return item.to
+        ? <Link key={item.label} to={item.to} className="topnav-link" data-active={active} aria-current={active ? "page" : undefined} onClick={onNavigate}>{item.label}{badge}</Link>
+        : <button key={item.label} type="button" className="topnav-link" onClick={() => { onSelect(item.label); onNavigate?.(); }}>{item.label}{badge}</button>;
+    })}
+  </nav>;
+}
+
+/** モバイル用ドロワー内の縦並びナビ。 */
+export function MobileNav({ onSelect, onNavigate }: { onSelect: (label: string) => void; onNavigate?: () => void }) {
+  const pathname = useRouterState({ select: s => s.location.pathname });
+  return <nav aria-label="メインナビゲーション" className="flex flex-col gap-0.5">
+    {items.map(item => {
+      const active = item.to === pathname;
+      const badge = item.badge ? <span className="new-badge">{item.badge}</span> : null;
+      return item.to
+        ? <Link key={item.label} to={item.to} className="mobilenav-link" data-active={active} aria-current={active ? "page" : undefined} onClick={onNavigate}>{item.label}{badge}</Link>
+        : <button key={item.label} type="button" className="mobilenav-link" onClick={() => { onSelect(item.label); onNavigate?.(); }}>{item.label}{badge}</button>;
+    })}
+  </nav>;
+}
