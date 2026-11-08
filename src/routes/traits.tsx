@@ -8,9 +8,9 @@ import { GENERALS, TRAITS, traitFor, type Trait } from "@/lib/sengoku-data";
 
 export const Route = createFileRoute("/traits")({
   head: () => ({ meta: [
-    { title: "特性一覧 | ぴえんで候" },
+    { title: "特性一覧 | 真戦勝率測定" },
     { name: "description", content: "金帯特性・汎用特性すべての効果と、所持する武将（解放凸数つき）を一覧で確認できます。" },
-    { property: "og:title", content: "特性一覧 | ぴえんで候" },
+    { property: "og:title", content: "特性一覧 | 真戦勝率測定" },
     { property: "og:description", content: "全特性の効果と所持武将を一覧で確認。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
