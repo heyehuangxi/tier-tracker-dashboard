@@ -8,9 +8,9 @@ import { GeneralFace } from "@/components/tier/general-face";
 
 export const Route = createFileRoute("/tactics")({
   head: () => ({ meta: [
-    { title: "戦法一覧 | ぴえんで候" },
+    { title: "戦法一覧 | 真戦勝率測定" },
     { name: "description", content: "S戦法・A戦法・固有戦法をすべて検索・絞り込みして効果や発動確率を確認できます。" },
-    { property: "og:title", content: "戦法一覧 | ぴえんで候" },
+    { property: "og:title", content: "戦法一覧 | 真戦勝率測定" },
     { property: "og:description", content: "全戦法の効果・発動確率・伝授元武将を一覧で確認。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
