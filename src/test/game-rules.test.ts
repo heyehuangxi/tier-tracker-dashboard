@@ -75,6 +75,17 @@ describe("Troops, search and tactics", () => {
     const names = new Set((report?.logs ?? []).map(l => l.tacticName).filter(Boolean));
     expect([...names].some(n => ["風林火山", "表裏比興", "鬼美濃"].includes(n ?? ""))).toBe(true);
   });
+  it("parses 時は今's shared-rate pick-one damage-over-time states", () => {
+    const eff = inherentByHolder.get("明智光秀")?.effect ?? "";
+    const spec = parseTactic("時は今", "能動", "70%", eff, "S", { inherent: true });
+    // 率は一括表記（ダメージ率56%）。状態は対象ごとに未付与を優先して1種だけ付与され、3ターン持続する
+    expect(spec.dotPickOne).toBe(true);
+    expect(spec.dots.map(d => d.kind).sort()).toEqual(["水攻め", "消沈", "火傷", "潰走", "中毒"].sort());
+    expect(spec.dots.every(d => d.rate === 56)).toBe(true);
+    expect(spec.dots.find(d => d.kind === "潰走")?.type).toBe("兵刃");
+    expect(spec.duration).toBe(3);
+    expect(spec.targets).toBe(2);
+  });
   it("handles 軍神 tame stacks instead of a permanent damage buff", () => {
     const eff = inherentByHolder.get("上杉謙信")?.effect ?? "";
     const spec = parseTactic("軍神", "受動", "100%", eff, "S", { inherent: true });
@@ -283,9 +294,9 @@ describe("Troops, search and tactics", () => {
 describe("Troop level （兵種レベル）", () => {
   const squadWith = (troop: "騎兵" | "足軽" | "鉄砲", generals: (string | null)[], ranks: number[]): Squad => ({ ...emptySquad(), troop, generals, ranks });
   it("sums level traits from all generals and applies the taisho cap bonus", () => {
-    // 柿崎景家（素: 騎兵大将 +3・上限+1）+ 柴田勝家（1凸: 馬術Ⅲ +3）+ 佐久間盛政（素: 馬術Ⅱ +2）= 8 / 上限11
+    // 柿崎景家（素: 騎兵大将 +3・上限+1）+ 柴田勝家（1凸: 馬術Ⅲ +3）+ 佐久間盛政（素: 馬術Ⅱ +2）= 8 / 上限12
     const r = troopLevelFor(squadWith("騎兵", ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], [0, 1, 0]));
-    expect(r).toEqual({ troop: "騎兵", level: 8, cap: 11 });
+    expect(r).toEqual({ troop: "騎兵", level: 8, cap: 12 });
   });
   it("only counts traits unlocked at the general's rank", () => {
     expect(troopLevelFor(squadWith("騎兵", ["g-柴田勝家", null, null], [0, 0, 0])).level).toBe(0);
@@ -311,9 +322,9 @@ describe("Troop level （兵種レベル）", () => {
   });
   it("adds the facility (barracks) level on top of trait levels, still capped", () => {
     expect(troopLevelFor({ ...emptySquad(), troop: "騎兵", facLv: 6 }).level).toBe(6);
-    // 特性8 + 施設6 = 14 だが、大将ありの上限11で止まる
+    // 特性8 + 施設6 = 14 だが、大将ありの上限12で止まる
     const r = troopLevelFor({ ...emptySquad(), troop: "騎兵", generals: ["g-柿崎景家", "g-柴田勝家", "g-佐久間盛政"], ranks: [0, 1, 0], facLv: 6 });
-    expect(r).toEqual({ troop: "騎兵", level: 11, cap: 11 });
+    expect(r).toEqual({ troop: "騎兵", level: 12, cap: 12 });
     // 共有リンクの往復でも施設レベルと開始兵力が保持され、範囲外は丸められる
     const rt = decodeFormation(encodeFormation({ mode: "free", squads: [{ ...emptySquad(), facLv: 6, startTroops: 22785 }] }))?.squads[0];
     expect(rt?.facLv).toBe(6);
