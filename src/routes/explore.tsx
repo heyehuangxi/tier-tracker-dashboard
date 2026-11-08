@@ -11,9 +11,9 @@ import { readLocal, useOwnedList, writeLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/explore")({
   head: () => ({ meta: [
-    { title: "AI編成探索 | ぴえんで候" },
+    { title: "AI編成探索 | 真戦勝率測定" },
     { name: "description", content: "武将と戦法をランダムに組み合わせてテンプレート編成と連戦させ、強かった編成を探します。" },
-    { property: "og:title", content: "AI編成探索 | ぴえんで候" },
+    { property: "og:title", content: "AI編成探索 | 真戦勝率測定" },
     { property: "og:description", content: "ランダム編成を自動生成して連戦検証し、上位の編成を表示します。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
