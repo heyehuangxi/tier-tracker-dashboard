@@ -7,9 +7,9 @@ import { useLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/saved")({
   head: () => ({ meta: [
-    { title: "保存した編成 | ぴえんで候" },
+    { title: "保存した編成 | 真戦勝率測定" },
     { name: "description", content: "共存編成・自由編成で保存した部隊構成を一覧・読込・削除できます。" },
-    { property: "og:title", content: "保存した編成 | ぴえんで候" },
+    { property: "og:title", content: "保存した編成 | 真戦勝率測定" },
     { property: "og:description", content: "保存した部隊構成を最大20件まで管理。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
