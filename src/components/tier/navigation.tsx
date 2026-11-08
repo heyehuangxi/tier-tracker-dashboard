@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 
-type Item = { label: string; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" | "/tactics" | "/tier-light" | "/explore" | "/generals" | "/traits" };
+type Item = { label: string; badge?: string; to?: "/" | "/coexist" | "/free" | "/holdings" | "/saved" | "/share" | "/tactics" | "/tier-light" | "/explore" | "/generals" | "/traits" | "/changelog" };
 const items: Item[] = [
   { label: "勝率測定", badge: "NEW", to: "/" },
   { label: "勝率測定light", badge: "NEW", to: "/tier-light" },
@@ -15,6 +15,7 @@ const items: Item[] = [
   { label: "武将一覧", to: "/generals" },
   { label: "属性値ランキング" },
   { label: "特性一覧", to: "/traits" },
+  { label: "更新履歴", badge: "NEW", to: "/changelog" },
 ];
 
 /** 上部ナビゲーション（横並び）。準備中項目は onSelect で通知する。 */
