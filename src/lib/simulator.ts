@@ -75,7 +75,7 @@ export function weaponBase(atkWu: number, defTong: number, troops: number, multi
 type DmgKind = "兵刃" | "計略";
 type StatModSpec = { idx: number; amount: number };
 type DotSpec = { kind: string; rate: number; type: DmgKind };
-type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; typeBuffs: { type: DmgKind; delta: number }[]; kindBuffs: { kind: string; delta: number; inherentOnly: boolean }[]; naBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; typeTaken: { type: DmgKind; delta: number }[]; kindTaken: { kind: string; delta: number }[]; naTaken: number; dots: DotSpec[]; dotChance: number; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined; reactive: boolean; targetLeader: boolean };
+type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; typeBuffs: { type: DmgKind; delta: number }[]; kindBuffs: { kind: string; delta: number; inherentOnly: boolean }[]; naBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; typeTaken: { type: DmgKind; delta: number }[]; kindTaken: { kind: string; delta: number }[]; naTaken: number; dots: DotSpec[]; dotChance: number; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined; reactive: boolean; targetLeader: boolean; reactHeal?: { chance: number; rate: number } | undefined };
 export type { TSpec };
 const maxPct = (re: RegExp, e: string) => { const m = e.match(re); return m ? Number(m[m.length - 1]) : 0; };
 const STAT_IDX: Record<string, number> = { 統率: 0, 武勇: 1, 知略: 2, 速度: 3 };
@@ -98,6 +98,9 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const dmg: TSpec["dmg"] = [];
   for (const m of e.matchAll(/(兵刃|計略)ダメージ（(?:ダメージ率)?(?:[\d.]+%[〜→])?([\d.]+)%/g)) dmg.push({ type: m[1] as DmgKind, rate: Number(m[2]) });
   const heal = maxPct(/回復(?:率)?[（(](?:毎ターン)?(?:回復率)?(?:[\d.]+%[〜→])?([\d.]+)%/, e);
+  // 反応回復（鬼美濃など）: 「ダメージを受けると、N%の確率で…自身の兵力を回復（回復率M%）」は毎ターン回復ではなく被弾トリガーで処理する
+  const reactHealM = e.match(/ダメージを受け(?:る|た)(?:際|場合|時|と)、?([\d.]+)%の確率で[^。]*?回復（(?:回復率)?([\d.]+)%/);
+  const reactHeal = reactHealM ? { chance: Number(reactHealM[1]) / 100, rate: Number(reactHealM[2]) } : undefined;
   const grant: TSpec["grant"] = {};
   if (/休養/.test(e)) grant.休養 = maxPct(/休養[（(](?:毎ターン)?(?:回復率)?(?:[\d.]+%[〜→])?([\d.]+)%/, e) || 50;
   if (/回生/.test(e)) grant.回生 = 50;
@@ -171,7 +174,7 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const targetLeader = /敵軍大将に/.test(e) && dmg.length > 0;
   // 対象数は敵側の範囲表記を優先する（自軍複数などの味方範囲を敵対象数に数えない）
   const targets = /敵軍全体|敵全体/.test(e) ? 3 : /敵軍複数|敵複数/.test(e) ? 2 : /敵軍単体|敵単体/.test(e) ? 1 : /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1;
-  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets, heal: grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff, typeBuffs, kindBuffs, naBuff, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade, takenDown, typeTaken, kindTaken, naTaken, dots, dotChance, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu, onceTurn, fromTurn, reactive, targetLeader };
+  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets, heal: reactHeal ? 0 : grant.休養 ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff, typeBuffs, kindBuffs, naBuff, dmgDown: maxPct(/与ダメージを(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade, takenDown, typeTaken, kindTaken, naTaken, dots, dotChance, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu, onceTurn, fromTurn, reactive, targetLeader, reactHeal };
 }
 
 type Status = { rate: number; until: number };
@@ -506,6 +509,12 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     if (steal) flatHeal(src, src, d * steal.rate / 100, turn, mine, type === "兵刃" ? "離反" : "心攻");
     const rebirth = active(dst, "回生", turn);
     if (rebirth && dst.troops > 0) doHeal(dst, dst, rebirth.rate, turn, !mine, "回生");
+    // 反応回復（鬼美濃など）: ダメージを受けた際、確率で自身の弱体化効果を浄化してから自身を回復する
+    const rh = dst.specs.find(s => s.reactHeal);
+    if (rh?.reactHeal && dst.troops > 0 && d > 0 && Math.random() < rh.reactHeal.chance) {
+      cleanseUnit(dst, 99);
+      doHeal(dst, dst, rh.reactHeal.rate, turn, !mine, rh.name);
+    }
     return d;
   };
   // 軍神（上杉謙信）「溜め」: 味方（自身以外）が通常攻撃・能動戦法・突撃戦法を発動するたび66%で1重なる（最大12）
