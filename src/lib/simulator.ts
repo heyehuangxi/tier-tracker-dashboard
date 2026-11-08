@@ -688,12 +688,19 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
       if (u.troops <= 0) return;
     }
     // 制御は行動開始時点で判定する。速い武将が同ターンに付与した制御も即座に効く。
-    const ctrl = u.ctrls.find(c => turn <= c.until);
-    if (ctrl) {
-      u.ctrls = u.ctrls.filter(c => c !== ctrl);
-      if (collectLog) logs.push({ turn: turn + 1, kind: "制御", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: [ctrl.kind], segments: [seg(u), { text: ` は `, tone: "plain" }, { text: ctrl.kind, tone: "effect" }, { text: ` により行動できない`, tone: "plain" }] });
+    // 種別で効き方が違う: 麻痺・混乱・威圧・疲弊は行動そのものを止める。封撃は通常攻撃（と、それに連なる突撃）だけを封じ、無策は能動戦法の発動だけを封じる
+    const activeCtrls = u.ctrls.filter(c => turn <= c.until);
+    const fullKind = ["麻痺", "混乱", "威圧", "疲弊"].find(k => activeCtrls.some(c => c.kind === k));
+    if (fullKind) {
+      const entry = activeCtrls.find(c => c.kind === fullKind)!;
+      u.ctrls = u.ctrls.filter(c => c !== entry);
+      if (collectLog) logs.push({ turn: turn + 1, kind: "制御", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: [fullKind], segments: [seg(u), { text: ` は `, tone: "plain" }, { text: fullKind, tone: "effect" }, { text: ` により行動できない`, tone: "plain" }] });
       return;
     }
+    const sealed = activeCtrls.some(c => c.kind === "封撃");
+    const silenced = activeCtrls.some(c => c.kind === "無策");
+    if (sealed) { const entry = activeCtrls.find(c => c.kind === "封撃")!; u.ctrls = u.ctrls.filter(c => c !== entry); }
+    if (silenced) { const entry = activeCtrls.find(c => c.kind === "無策")!; u.ctrls = u.ctrls.filter(c => c !== entry); }
     if (collectLog) logs.push({ turn: turn + 1, kind: "行動開始", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: hasPriority(u, turn) ? ["先攻"] : [], segments: [seg(u), { text: ` の行動開始 兵力${Math.round(u.troops)} 速度${Math.round(effSpeed(u, turn))}${hasPriority(u, turn) ? "（先攻）" : ""}`, tone: "plain" }] });
     // 軍神の大将技: 大将のとき、毎ターン行動前に「溜め」を追加で1回分獲得
     if (u.gunshin && u.isLeader) u.tame = Math.min(12, u.tame + 1);
@@ -752,11 +759,11 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     // 準備中の戦法は残り準備ターンを消化し、0になったものから発動する
     const ready: TSpec[] = [];
     u.pending = u.pending.filter(p => { p.delay -= 1; if (p.delay <= 0) { ready.push(p.s); return false; } return true; });
-    for (const s of ready) fire(u, s, own, foe, mine, turn);
+    for (const s of ready) if (!silenced) fire(u, s, own, foe, mine, turn);
     for (const s of u.specs) {
       if (turn <= (u.cooldownUntil.get(s.name) ?? -1)) continue;
       if (s.reactive) continue; // 反応型は受けた時にだけ働く（古今独歩は damage 側で処理）。能動的には発動しない
-      if (s.kind === "能動" && Math.random() < adjProb(u, s, turn)) {
+      if (s.kind === "能動" && !silenced && Math.random() < adjProb(u, s, turn)) {
         const prep = s.prepTurns || (s.prepare ? 1 : 0);
         if (prep > 0 && turn + prep < 8) u.pending.push({ s, delay: prep });
         else if (prep === 0) {
@@ -772,6 +779,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     }
     // 通常攻撃の対象: 挑発・牽制が有効ならその付与者に固定、それ以外はランダム
     const target = u.taunt && turn <= u.taunt.until && u.taunt.src.troops > 0 ? u.taunt.src : wpick(alive(foe), 1, x => x.targetWeight)[0]; if (!target) return;
+    if (!sealed) {
     // 軍神「溜め」: 通常攻撃ダメージが1スタックごとに10%上昇（最大12スタック=+120%）。通常攻撃後にリセット
     const stacks = u.gunshin ? u.tame : 0;
     if (stacks > 0 && collectLog) logs.push({ turn: turn + 1, kind: "状態", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), effects: [`溜め×${stacks}`], segments: [seg(u), { text: ` の`, tone: "plain" }, { text: `溜め×${stacks}`, tone: "effect" }, { text: `（通常攻撃ダメージ+${stacks * 10}%）`, tone: "plain" }] });
@@ -804,7 +812,8 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     tameTrigger(u, own); // 味方の通常攻撃は軍神の「溜め」判定対象（自身は tameTrigger 内で除外）
     // 三河武士: 自軍の通常攻撃後、15%で自身の次回の被ダメージ-50%（部隊内に所持者がいる場合）
     if (own.some(x => x.traitSet.has("三河武士") && x.troops > 0) && Math.random() < 0.15) u.shieldNext = 0.5;
-    for (const s of u.specs) if (s.kind === "突撃" && Math.random() < adjProb(u, s, turn) && turn > (u.cooldownUntil.get(s.name) ?? -1)) fire(u, s, own, foe, mine, turn, target);
+    }
+    for (const s of u.specs) if (s.kind === "突撃" && !sealed && Math.random() < adjProb(u, s, turn) && turn > (u.cooldownUntil.get(s.name) ?? -1)) fire(u, s, own, foe, mine, turn, target);
     // 魔王: 自身の行動後、兵力が初めて50%以下になった敵武将はランダムに5%以下の兵力を損失
     if (u.traitSet.has("魔王")) for (const f of foe) if (f.troops > 0 && f.troops <= f.max / 2 && !f.counters["maou"]) {
       f.counters["maou"] = 1;
