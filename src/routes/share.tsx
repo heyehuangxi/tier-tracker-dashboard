@@ -9,9 +9,9 @@ import { useLocal, readLocal, writeLocal, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/share")({
   head: () => ({ meta: [
-    { title: "共有 | ぴえんで候" },
+    { title: "共有 | 真戦勝率測定" },
     { name: "description", content: "共有URLから受け取った編成を表示・保存します。" },
-    { property: "og:title", content: "共有された編成 | ぴえんで候" },
+    { property: "og:title", content: "共有された編成 | 真戦勝率測定" },
     { property: "og:description", content: "共有URLで届いた部隊構成を確認できます。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
