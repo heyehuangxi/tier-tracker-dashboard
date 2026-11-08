@@ -75,7 +75,7 @@ export function troopDamageMultiplier(attacker: unknown, defender: unknown): num
   return TROOP_ADVANTAGE[a] === b ? 1.125 : TROOP_ADVANTAGE[b] === a ? 0.875 : 1;
 }
 /** 兵種レベルの上限（大将特性で+1） */
-export const TROOP_LEVEL_CAP = 10;
+export const TROOP_LEVEL_CAP = 11; // 実戦で兵種レベル11（戦闘1）・上限+1特性ありで12（戦闘6）を確認（2026-11-08）。12超は未観測
 /** 兵種レベル1ごとの全属性補正（ゲーム仕様: +2%/レベル、部隊全員に適用） */
 export const TROOP_LEVEL_STAT_RATE = 0.02;
 /**
