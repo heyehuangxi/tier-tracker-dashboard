@@ -4,9 +4,9 @@ import { FormationEditor } from "@/components/tier/formation-editor";
 
 export const Route = createFileRoute("/coexist")({
   head: () => ({ meta: [
-    { title: "共存編成 | ぴえんで候" },
+    { title: "共存編成 | 真戦勝率測定" },
     { name: "description", content: "所持武将・戦法だけで最大10部隊を重複なしで編成します。" },
-    { property: "og:title", content: "共存編成 | ぴえんで候" },
+    { property: "og:title", content: "共存編成 | 真戦勝率測定" },
     { property: "og:description", content: "所持武将・戦法で重複なしの最大10部隊を編成。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
