@@ -12,9 +12,9 @@ import { useOwnedList, KEYS } from "@/lib/use-local";
 
 export const Route = createFileRoute("/holdings")({
   head: () => ({ meta: [
-    { title: "所持管理 | ぴえんで候" },
+    { title: "所持管理 | 真戦勝率測定" },
     { name: "description", content: "所持している武将と戦法を登録し、共存編成で利用します。" },
-    { property: "og:title", content: "所持管理 | ぴえんで候" },
+    { property: "og:title", content: "所持管理 | 真戦勝率測定" },
     { property: "og:description", content: "所持武将・戦法をまとめて管理。" },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
