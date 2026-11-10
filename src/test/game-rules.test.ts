@@ -526,3 +526,111 @@ describe("Reactive healing （反応回復）", () => {
     expect(total).toBeGreaterThan(0);
   });
 });
+
+describe("2026-11-10 parse fixes （援護・一領具足・千成瓢箪・嚢沙之計ほか）", () => {
+  it("parses 千成瓢箪 as a 76% heal of 2 allies with a 35% all-ally chance (not an inner proc gate)", () => {
+    const s = parseTactic("千成瓢箪", "指揮", "100%", "毎ターン自軍複数（2名）を回復し（回復率76%、知略依存）、35%の確率で自軍全体を回復", "S", { inherent: true });
+    expect(s.heal).toBe(76);
+    expect(s.healCount).toBe(2);
+    expect(s.healAllChance).toBeCloseTo(0.35);
+    expect(s.inner).toBe(1);
+  });
+  it("千成瓢箪 actually heals in battle", () => {
+    const ally = { ...emptySquad(), generals: ["g-豊臣秀吉", "g-黒田官兵衛", "g-ねね"] };
+    const foe = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"] };
+    let healed = 0;
+    for (let i = 0; i < 30; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      healed += rep?.logs.filter(l => l.tacticName === "千成瓢箪").reduce((s2, l) => s2 + (l.heal ?? 0), 0) ?? 0;
+    }
+    expect(healed).toBeGreaterThan(0);
+  });
+  it("parses 嚢沙之計's ranged water DoT at max rate and its 計略被ダメージ上昇 grant", () => {
+    const s = parseTactic("嚢沙之計", "能動", "30%", "2ターンの間、敵軍複数に水攻め（毎ターン51%〜102%）と計略被ダメージ15%〜30%上昇を付与。", "S");
+    expect(s.dots).toEqual([{ kind: "水攻め", rate: 102, type: "計略" }]);
+    expect(s.grantTaken).toEqual([{ type: "計略", delta: 0.3 }]);
+    expect(s.duration).toBe(2);
+  });
+  it("parses 戦意崩壊's stat drop and its 鉄壁 for the squad leader", () => {
+    const s = parseTactic("戦意崩壊", "突撃", "—", "通常攻撃後、対象の統率・知略を65低下させ、自軍大将に鉄壁を2回付与。", "S");
+    expect(s.downStats).toEqual([{ idx: 0, amount: 65 }, { idx: 2, amount: 65 }]);
+    expect(s.teppeki).toBe(2);
+    expect(s.teppekiToLeader).toBe(true);
+  });
+  it("parses 一上一下's self active-rate bonus at the range maximum", () => {
+    expect(parseTactic("一上一下", "受動", "100%", "戦闘中、自身の能動戦法発動率が6%〜12%増加。", "A").actSelf).toBeCloseTo(0.12);
+    expect(parseTactic("一上一下", "受動", "100%", "戦闘中、自身の能動戦法の発動確率が12%増加", "S", { inherent: true }).actSelf).toBeCloseTo(0.12);
+  });
+  it("parses 一領具足's early-turn damage reduction and 備兵 flag", () => {
+    const s = parseTactic("一領具足", "指揮", "100%", "最初の2ターン、自軍全体の兵力損害を6%〜12%軽減＋3〜4ターン目に備兵を獲得。", "S");
+    expect(s.earlyTaken).toEqual({ delta: 0.12, turns: 2 });
+    expect(s.bihei).toBe(true);
+  });
+  it("一領具足 grants 備兵 during battle (turns 3-4)", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"] };
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-一領具足", "t-三河武士", "t-乗勝追撃", "t-理非曲直", "t-荷駄崩し", "t-帰還の凱歌"], ranks: [2, 1, 1], facLv: 5 };
+    let grants = 0;
+    for (let i = 0; i < 30; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      grants += rep?.logs.filter(l => l.tacticName === "一領具足" && l.effects.includes("備兵")).length ?? 0;
+    }
+    expect(grants).toBeGreaterThan(0);
+  });
+  it("parses 文武両道's stacking stat buff (per master text: 計略→武勇, 兵刃→知略)", () => {
+    const s = parseTactic("文武両道", "受動", "100%", "計略ダメージで武勇が、兵刃ダメージで知略が毎回30増加（最大5回）", "S");
+    expect(s.dmgStack).toEqual({ per: 30, max: 5 });
+  });
+  it("文武両道 raises its holder's damage output over a battle", () => {
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"] };
+    const mkSq = (bunbu: boolean) => ({ ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", null, bunbu ? "t-文武両道" : null, "t-乱世の華", "t-乗勝追撃", "t-一力当先"] });
+    const avgDealt = (sq: ReturnType<typeof mkSq>) => {
+      let sum = 0; const N = 60;
+      for (let i = 0; i < N; i++) {
+        const rep = runSimulation(sq, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+        sum += rep?.units.find(u => u.name === "武田信玄")?.dealt ?? 0;
+      }
+      return sum / N;
+    };
+    expect(avgDealt(mkSq(true))).toBeGreaterThan(avgDealt(mkSq(false)) * 1.05);
+  });
+  it("parses 越後流軍学's +20% self active rate through the generic actSelf path", () => {
+    const s = parseTactic("越後流軍学", "指揮", "100%", "戦闘中、自身の能動戦法の発動率が20%上昇。能動戦法発動時、50%（知略依存）の確率で自軍全体に封撃、無策、威圧、疲弊のいずれかに対する耐性を付与（2ターン持続。未獲得耐性を優先）", "S", { inherent: true });
+    expect(s.actSelf).toBeCloseTo(0.2);
+  });
+  it("三河魂's 援護 makes the highest-武勇 ally cover normal attacks aimed at the leader", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"] };
+    const covers: { actor: string; target: string | undefined }[] = [];
+    for (let i = 0; i < 40; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) if (l.effects.includes("援護")) covers.push({ actor: l.actor, target: l.target });
+    }
+    expect(covers.length).toBeGreaterThan(0);
+    for (const c of covers) { expect(["本多忠勝", "本多正信"]).toContain(c.actor); expect(c.target).toBe("徳川家康"); }
+    // 武勇が最も高い忠勝が生存している間は彼が肩代わりするため、忠勝のカバーが過半を占める
+    expect(covers.filter(c => c.actor === "本多忠勝").length).toBeGreaterThan(covers.length / 2);
+  });
+  it("no 援護 is granted when the 三河魂 holder is not the leader", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-本多忠勝", "g-徳川家康", "g-本多正信"], tactics: ["t-乗勝追撃", "t-威風凜々", "t-戮力同心", "t-三河武士", "t-所領役帳", "t-荷駄崩し"] };
+    let covers = 0;
+    for (let i = 0; i < 40; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      covers += rep?.logs.filter(l => l.effects.includes("援護")).length ?? 0;
+    }
+    expect(covers).toBe(0);
+  });
+  it("会盟の陣 raises the leader's active firing rate when all three factions differ", () => {
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"] };
+    const mkSq = (kaimei: boolean) => ({ ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", kaimei ? "t-会盟の陣" : null, null, null, null, null], ranks: [0, 1, 0] });
+    const countFirings = (sq: ReturnType<typeof mkSq>) => {
+      let n = 0;
+      for (let i = 0; i < 150; i++) {
+        const rep = runSimulation(sq, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+        n += rep?.logs.filter(l => l.tacticName === "相模の獅子").length ?? 0;
+      }
+      return n;
+    };
+    expect(countFirings(mkSq(true))).toBeGreaterThan(countFirings(mkSq(false)) * 1.12);
+  });
+});
