@@ -633,4 +633,46 @@ describe("2026-11-10 parse fixes （援護・一領具足・千成瓢箪・嚢�
     };
     expect(countFirings(mkSq(true))).toBeGreaterThan(countFirings(mkSq(false)) * 1.12);
   });
+  it("会盟の陣's 副将強化 buffs both adjutants every turn (turn 1: equal troops, earlier slot counts as higher)", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"] };
+    const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+    const t1 = (rep?.logs ?? []).filter(l => l.turn === 1 && l.tacticName === "会盟の陣" && l.effects.includes("副将強化"));
+    expect(t1.length).toBe(2);
+    // 開始時は両副将とも同兵力 → スロット順で先の信玄が高兵力扱い、甲斐が低兵力扱い。大将は対象外
+    expect(t1.find(l => l.actor === "武田信玄")?.effects).toContain("兵力高");
+    expect(t1.find(l => l.actor === "成田甲斐")?.effects).toContain("兵力低");
+    expect(t1.some(l => l.actor === "北条氏康")).toBe(false);
+  });
+  it("会盟の陣's 副将強化 is re-evaluated each turn from current troops (ranking can swap mid-battle)", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"], ranks: [2, 1, 1], facLv: 5, startTroops: 21697 };
+    let kaiHigh = 0, kaiLow = 0, bothSameTag = 0, total = 0;
+    for (let i = 0; i < 60; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      const byTurn = new Map<number, { actor: string; tag: string }[]>();
+      for (const l of rep?.logs ?? []) {
+        if (l.tacticName !== "会盟の陣" || !l.effects.includes("副将強化")) continue;
+        const tag = l.effects.includes("兵力高") ? "高" : "低";
+        const arr = byTurn.get(l.turn) ?? []; arr.push({ actor: l.actor, tag }); byTurn.set(l.turn, arr);
+        if (l.turn >= 2 && l.actor === "成田甲斐") { total++; if (tag === "高") kaiHigh++; else kaiLow++; }
+      }
+      for (const arr of byTurn.values()) if (arr.length === 2 && arr[0]?.tag === arr[1]?.tag) bothSameTag++;
+    }
+    expect(bothSameTag).toBe(0); // 同じターンに両副将へ同じ区分は付かない
+    expect(kaiHigh).toBeGreaterThan(0); // 甲斐が兵力高になるターンが実在する＝毎ターン再評価されている
+    expect(kaiLow).toBeGreaterThan(0);
+    expect(total).toBeGreaterThan(20);
+  });
+  it("会盟の陣's 副将強化 is not granted when two members share a faction", () => {
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"] };
+    // 氏康と綱成が同じ北条勢力 → 全員異勢力の条件を満たさない
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-北条綱成"], tactics: ["t-回天転運", "t-会盟の陣", null, null, null, null], ranks: [0, 1, 0] };
+    let grants = 0;
+    for (let i = 0; i < 30; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      grants += rep?.logs.filter(l => l.tacticName === "会盟の陣" && l.effects.includes("副将強化")).length ?? 0;
+    }
+    expect(grants).toBe(0);
+  });
 });

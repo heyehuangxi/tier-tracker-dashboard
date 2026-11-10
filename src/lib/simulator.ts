@@ -408,13 +408,15 @@ function buildUnits(q: Squad): Unit[] {
   if (units.some(u => u.traitSet.has("上下一心"))) for (const u of units) u.ctrlResists.push({ rate: 0.3, left: 1, untilTurn: 0 });
   if (units.some(u => u.traitSet.has("四州の雄"))) for (const u of units) u.naDmgBonus += 0.06; // 自軍全体の通常攻撃ダメージ+6%（駐屯中12%は対象外）
   // 会盟の陣: 自軍3名が全員異勢力（真田昌幸の同勢力扱いを含む）かつ大将の固有戦法が能動/突撃のとき、大将の能動・突撃発動率+13%
-  // （文面の「副将強化」は数値の記載がないため未実装）
+  // 副将強化（毎ターン行動前、兵力が高い方の副将は与ダメ+18%・被ダメ-10%、低い方の副将は与ダメ+10%・被ダメ-18%）は
+  // fight側のターン開始処理で毎ターン付け直すため、ここでは条件成立の印だけを大将に立てる
   if (units[0] && units.some(u => u.specs.some(s => s.name === "会盟の陣"))) {
     const facs = [0, 1, 2].map(i => effectiveFaction(q.generals, i));
     const leaderGen = q.generals[0] ? generalById.get(q.generals[0]) : undefined;
     const leaderInh = leaderGen ? inherentByHolder.get(leaderGen.name) : undefined;
     if (new Set(facs).size === 3 && leaderInh && (leaderInh.kind === "能動" || leaderInh.kind === "突撃")) {
       units[0].actProbMods.push({ kind: "能動", inherent: null, delta: 0.13, notHitOnly: false, untilTurn: 99 }, { kind: "突撃", inherent: null, delta: 0.13, notHitOnly: false, untilTurn: 99 });
+      units[0].counters["kaimei"] = 1;
     }
   }
   return units;
@@ -966,6 +968,22 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     }
   };
   for (let turn = 0; turn < 8; turn++) {
+    // 会盟の陣「副将強化」: 条件成立部隊は毎ターン開始時、その時点の兵力で副将2名を比べ直し、
+    // 高い方に与ダメージ+18%・被ダメージ-10%、低い方に与ダメージ+10%・被ダメージ-18%をそのターン付与する
+    // （同値はスロット順で先の副将を高兵力扱い。ターン途中で順位が入れ替わっても付け替えはしない）
+    for (const squad of [A, B]) {
+      if (!squad[0]?.counters["kaimei"]) continue;
+      const s1 = squad[1], s2 = squad[2];
+      if (!s1 || !s2) continue;
+      const hi = s1.troops >= s2.troops ? s1 : s2;
+      const lo = hi === s1 ? s2 : s1;
+      for (const [u, dmg, taken, tag] of [[hi, 0.18, 0.10, "兵力高"], [lo, 0.10, 0.18, "兵力低"]] as const) {
+        if (u.troops <= 0) continue;
+        u.dmgMods.push({ delta: dmg, until: turn });
+        u.takenMods.push({ delta: taken, until: turn });
+        if (collectLog) logs.push({ turn: turn + 1, kind: "状態", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), tacticName: "会盟の陣", effects: ["副将強化", tag], segments: [seg(u), { text: ` は`, tone: "plain" }, { text: "会盟の陣", tone: "effect" }, { text: `（副将強化・${tag}）で与ダメージ+${Math.round(dmg * 100)}%・被ダメージ-${Math.round(taken * 100)}%`, tone: "plain" }] });
+      }
+    }
     // 材徳兼備: ターン開始時、友軍が40%で次回の与ダメージ+28%（1人につき最大2回まで）
     for (const u of [...A, ...B]) if (u.traitSet.has("材徳兼備") && u.troops > 0) {
       const squad = u.side === "自軍" ? A : B;
