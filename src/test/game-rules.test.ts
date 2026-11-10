@@ -563,7 +563,7 @@ describe("2026-11-10 parse fixes （援護・一領具足・千成瓢箪・嚢�
   });
   it("parses 一領具足's early-turn damage reduction and 備兵 flag", () => {
     const s = parseTactic("一領具足", "指揮", "100%", "最初の2ターン、自軍全体の兵力損害を6%〜12%軽減＋3〜4ターン目に備兵を獲得。", "S");
-    expect(s.earlyTaken).toEqual({ delta: 0.12, turns: 2 });
+    expect(s.earlyTaken).toEqual({ delta: 0.12, turns: 2, statIdx: 1 }); // 軽減は武勇依存（statIdx 1＝武勇でスケーリング）
     expect(s.bihei).toBe(true);
   });
   it("一領具足 grants 備兵 during battle (turns 3-4)", () => {
@@ -674,5 +674,70 @@ describe("2026-11-10 parse fixes （援護・一領具足・千成瓢箪・嚢�
       grants += rep?.logs.filter(l => l.tacticName === "会盟の陣" && l.effects.includes("副将強化")).length ?? 0;
     }
     expect(grants).toBe(0);
+  });
+});
+
+describe("2026-11-10 追加修正2（三河武士「不屈」・一領具足の武勇依存）", () => {
+  it("parses 三河武士's 不屈 flag and its squad 統率 aura", () => {
+    const s = parseTactic("三河武士", "兵種", "100%", "足軽が進化。自軍全体の統率が8〜16増加。攻撃受領時に不屈発動・回復。", "S");
+    expect(s.fukutsu).toBe(true);
+    expect(s.upStats).toEqual([{ idx: 0, amount: 16 }]);
+    expect(s.upAll).toBe(true);
+  });
+  it("三河武士's 統率 aura is scaled by Ieyasu's own 統率 when he equips it (全文の家康装備時スケーリング)", () => {
+    const mkSq = (holderIsIeyasu: boolean) => ({
+      ...emptySquad(), troop: "足軽" as const,
+      generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"],
+      tactics: holderIsIeyasu
+        ? ["t-三河武士", "t-戮力同心", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"]
+        : ["t-戮力同心", "t-一領具足", "t-三河武士", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"],
+      ranks: [0, 0, 0], facLv: 0,
+    });
+    const tongOf = (sq: ReturnType<typeof mkSq>, name: string) => squadTraitEffects(sq).find(x => x.name === name)?.stats[0] ?? 0;
+    // 家康の統率231 → 16×(1+231/1000)≈19.7→+20。他武将が持てば平坦+16。差は正信の統率でちょうど4になる
+    expect(tongOf(mkSq(true), "本多正信") - tongOf(mkSq(false), "本多正信")).toBe(4);
+  });
+  it("不屈 fires at the start of the next turn (never on turn 1), at most 4 times, and the 4th activation deals damage instead of healing", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const foe = { ...emptySquad(), troop: "足軽" as const, generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"], tactics: ["t-戮力同心", "t-三河武士", "t-乗勝追撃", "t-威風凜々", "t-所領役帳", "t-荷駄崩し"] };
+    let totalActs = 0, damageActs = 0, healEvents = 0;
+    for (let i = 0; i < 40; i++) {
+      const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+      const acts = (rep?.logs ?? []).filter(l => l.tacticName === "三河武士" && l.effects.includes("不屈"));
+      expect(acts.length).toBeLessThanOrEqual(4); // 打ち止め: 1戦で最大4回
+      expect(acts.filter(l => !l.effects.includes("ダメージ")).length).toBeLessThanOrEqual(3); // 回復は最大3回（4回目はダメージ）
+      for (const a of acts) {
+        expect(a.turn).toBeGreaterThanOrEqual(2); // 閾値到達の翌ターン開始時に発動するので、1ターン目には出ない
+        totalActs++;
+        if (a.effects.includes("ダメージ")) damageActs++;
+      }
+      healEvents += (rep?.logs ?? []).filter(l => l.tacticName === "不屈" && (l.heal ?? 0) > 0).length;
+    }
+    expect(totalActs).toBeGreaterThan(40); // ほぼ毎戦発動する
+    expect(healEvents).toBeGreaterThan(0); // 実際に自軍全体が回復している
+    expect(damageActs).toBeGreaterThan(0); // 4回目のダメージ化が起きる戦闘がある
+  });
+  it("一領具足's damage reduction scales with the holder's 武勇 (deterministic first-hit comparison)", () => {
+    const ally = { ...emptySquad(), troop: "騎兵" as const, generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    // 所持者は正信で固定し、武勇への能力配分だけを変える（他の条件は完全同一）。
+    // 武勇43 → 軽減 12%×1.043≈12.5%、武勇143（+100配分）→ 12%×1.143≈13.7%
+    const mkFoe = (buyuAlloc: number) => ({
+      ...emptySquad(), troop: "足軽" as const,
+      generals: ["g-徳川家康", "g-本多忠勝", "g-本多正信"],
+      tactics: ["t-三河武士", "t-戮力同心", "t-乗勝追撃", "t-威風凜々", "t-一領具足", "t-荷駄崩し"],
+      ranks: [0, 0, 5],
+      alloc: [[0, 0, 0, 0], [0, 0, 0, 0], [0, buyuAlloc, 0, 0]],
+    });
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.6);
+    try {
+      const firstHit = (foe: ReturnType<typeof mkFoe>) => {
+        const rep = runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report;
+        return rep?.logs.find(l => (l.damage ?? 0) > 0 && l.targetSide === "敵軍");
+      };
+      const hi = firstHit(mkFoe(100)); // 武勇が高い所持者 → 軽減が大きい → 最初の被ダメージが小さい
+      const lo = firstHit(mkFoe(0));
+      expect(hi?.target).toBe(lo?.target); // 乱数固定なので最初の一撃の対象・条件は同一
+      expect(hi?.damage ?? 0).toBeLessThan(lo?.damage ?? 0);
+    } finally { random.mockRestore(); }
   });
 });
