@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 
 import { AppShell } from "@/components/tier/app-shell";
+import { EmailPrivacyNote } from "@/components/tier/email-privacy-note";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,5 +89,6 @@ function Register() {
     <p className="mt-4 text-center text-[12px] text-muted-foreground">
       既にアカウントをお持ちの方は <Link to="/login" className="text-primary underline underline-offset-4">ログイン</Link>
     </p>
+    <EmailPrivacyNote />
   </section>;
 }
