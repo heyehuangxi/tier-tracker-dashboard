@@ -265,6 +265,27 @@ describe("Troops, search and tactics", () => {
     expect(decodeOwned("garbage")).toBeNull();
     expect(decodeOwned("1AAAA")).toBeNull();
   });
+  it("keeps the user-supplied activation rates for the 45 tactics filled in on 2026-11-11", () => {
+    // 2026-11-11 にユーザーが実ゲームから提供した発動率。マスター編集で「—」へ
+    // 逆戻りしたり値が書き換わったりしたらここで落とす。
+    const SUPPLIED_RATES: Record<string, string> = {
+      "威風凜々": "35%", "陣形崩し": "35%", "奇謀独断": "35%", "金鼓連天": "40%", "剛毅果断": "40%",
+      "大智不智": "30%", "五里霧中": "35%", "前後挟撃": "35%", "静動自在": "30%", "離心の計": "35%",
+      "自立の志": "40%", "専横専断": "40%", "電光石火": "40%", "金城湯池": "40%", "乗勝追撃": "30%",
+      "理非曲直": "35%", "戦意崩壊": "35%", "境目奮戦": "35%", "機に乗ず": "35%", "攻守兼備": "40%",
+      "殿軍奮戦": "55%", "先制先登": "35%", "鬼玄蕃": "30%", "先陣の勇": "35%", "岐阜侍従": "35%",
+      "甲州流軍学": "35%", "奮戦": "35%", "忠勤励行": "35%", "援護射撃": "40%", "不意打ち": "45%",
+      "生死一顧": "50%", "弓調馬服": "40%", "融通自在": "45%", "秋水一色": "35%", "妖怪退治": "35%",
+      "闇討ち": "45%", "敵陣攪乱": "35%", "驍勇善戦": "35%", "一六勝負": "40%", "家中整序": "35%",
+      "破天の轟": "35%", "一刀両断": "30%", "回山倒海": "35%", "一触即発": "40%", "槍の鈴": "35%",
+    };
+    expect(Object.keys(SUPPLIED_RATES)).toHaveLength(45);
+    for (const [name, rate] of Object.entries(SUPPLIED_RATES)) {
+      const t = ALL_TACTICS.find(x => x.name === name);
+      expect(t, name).toBeDefined();
+      expect(t!.rate, name).toBe(rate);
+    }
+  });
   it("scopes damage buffs and reductions to the clause's target category", () => {
     const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
     // 計略与ダメージ上昇は計略だけに効く（全ダメージに漏れない）
