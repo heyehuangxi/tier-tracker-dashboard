@@ -1066,3 +1066,103 @@ describe("2026-11-11 screenshot wave （全文スクリーンショット: 竜�
     expect(seen).toBe(true);
   });
 });
+
+describe("2026-11-11 screenshot wave 2 （三河弓兵隊の回生・三河武士全文・攻守兼備・3凸特性・残件2件）", () => {
+  const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+  const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+
+  it("三河弓兵隊: 全文パース（回生は回復率65%・発動確率35%に分離、統率+20は自軍全体）", () => {
+    const s = P("三河弓兵隊");
+    expect(s.grant.回生).toBe(65); // 旧フォールバック50ではない
+    expect(s.rebirthChance).toBeCloseTo(0.35); // 酒井忠次装備時の上乗せは文面に数値が無く、35%で平坦に読む
+    expect(s.upStats).toEqual([{ idx: 0, amount: 20 }]);
+    expect(s.upAll).toBe(true); // 全文「自軍全体の統率が10〜20増加」（旧略記では所持者だけに付いていた）
+  });
+
+  it("三河弓兵隊: 回生の回復は1〜3ターン目だけに現れ、4ターン目以降は現れない", () => {
+    const squad: Squad = { ...emptySquad(), troop: "弓兵", generals: ["g-豊臣秀吉", "g-ねね", "g-福島正則"], tactics: ["t-三河弓兵隊", null, null, null, null, null] };
+    const foe: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"] };
+    let heals = 0;
+    for (let i = 0; i < 20; i++) {
+      const rep = runSimulation(squad, [{ label: "foe", squad: foe }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) if (l.tacticName === "回生" && (l.heal ?? 0) > 0) { heals++; expect(l.turn).toBeLessThanOrEqual(3); }
+    }
+    expect(heals).toBeGreaterThan(5); // 3ターン目までの被ダメージで実際に回復が起きている
+  });
+
+  it("三河武士: 全文でも不屈の数値は従来どおり（統率+16・不屈フラグ。回復は汎用 heal ではなく専用処理）", () => {
+    const s = P("三河武士");
+    expect(s.upStats).toEqual([{ idx: 0, amount: 16 }]);
+    expect(s.upAll).toBe(true);
+    expect(s.fukutsu).toBe(true);
+  });
+
+  it("攻守兼備: ダメージ率184%を種別フレックスとして読む（伝授・固有とも）", () => {
+    expect(P("攻守兼備").flexDmg).toBe(184); // 伝授版は文面に種別表記が無く、ユーザー回答（2026-11-11）の種別ルールで読む
+    expect(P("攻守兼備").dmg).toEqual([]);
+    const inh = INHERENT_TACTICS.find(x => x.name === "攻守兼備")!;
+    // 固有版（脇坂安治）は全文に「ダメージタイプは武勇と知略の高い方」と種別ルール自体が書かれている
+    expect(parseTactic(inh.name, inh.kind, inh.rate, inh.effect, "S", { inherent: true }).flexDmg).toBe(184);
+  });
+
+  it("攻守兼備: 種別は所持者の武勇と知略の高い方で決まる（初回ヒットの平均ダメージで判定）", () => {
+    // 敵は統率と知略がほぼ等しい3名にそろえて防御側の差を消す。攻撃側の属性差で種別が判定できる
+    const foe: Squad = { ...emptySquad(), generals: ["g-北条氏康", "g-安東愛季", "g-里見義堯"] };
+    const firstHits = (sq: Squad) => {
+      const dmg: number[] = [];
+      for (let i = 0; i < 80 && dmg.length < 40; i++) {
+        const rep = runSimulation(sq, [{ label: "foe", squad: foe }], 1).perOpponent[0]?.report;
+        const hit = (rep?.logs ?? []).find(l => l.tacticName === "攻守兼備" && (l.damage ?? 0) > 0);
+        if (hit?.damage) dmg.push(hit.damage);
+      }
+      return dmg;
+    };
+    // 武勇型（本多忠勝: 武勇229・知略116）— 兵刃で計算されれば大きく、計略なら小さい
+    const bu: Squad = { ...emptySquad(), generals: ["g-本多忠勝", "g-徳川家康", "g-酒井忠次"], tactics: ["t-攻守兼備", null, null, null, null, null] };
+    const buHits = firstHits(bu);
+    expect(buHits.length).toBeGreaterThanOrEqual(20);
+    expect(buHits.reduce((x, y) => x + y, 0) / buHits.length).toBeGreaterThan(980);
+    // 知略型（黒田官兵衛: 知略229・武勇113）— 計略で計算されれば大きく、兵刃なら小さい
+    const chi: Squad = { ...emptySquad(), generals: ["g-黒田官兵衛", "g-豊臣秀吉", "g-竹中半兵衛"], tactics: ["t-攻守兼備", null, null, null, null, null] };
+    const chiHits = firstHits(chi);
+    expect(chiHits.length).toBeGreaterThanOrEqual(20);
+    expect(chiHits.reduce((x, y) => x + y, 0) / chiHits.length).toBeGreaterThan(980);
+  });
+
+  it("3凸特性名: 蜂須賀家政=砲術Ⅱ（鉄砲Lv+2）、吉川広家=弓術Ⅰ（弓兵Lv+1）が兵種レベルに効く", () => {
+    const byName = (n: string) => GENERALS.find(g => g.name === n)!;
+    expect(activeTraitNames(byName("蜂須賀家政"), 3)).toContain("砲術Ⅱ");
+    expect(activeTraitNames(byName("吉川広家"), 3)).toContain("弓術Ⅰ");
+    expect(activeTraitNames(byName("蜂須賀家政"), 1)).not.toContain("砲術Ⅱ"); // 3凸までは解放されない
+    expect(traitFor("砲術Ⅱ")?.effect).toContain("鉄砲レベル+2");
+    expect(traitFor("弓術Ⅰ")?.effect).toContain("弓兵レベル+1");
+    const gun: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-蜂須賀家政", "g-豊臣秀吉", "g-ねね"], ranks: [3, 0, 0] };
+    expect(troopLevelFor(gun).level).toBe(2);
+    const bow: Squad = { ...emptySquad(), troop: "弓兵", generals: ["g-吉川広家", "g-毛利元就", "g-毛利輝元"], ranks: [3, 0, 0] };
+    expect(troopLevelFor(bow).level).toBe(1);
+  });
+
+  it("瞬息万変: 混乱の付与確率は確定（全文に確率表記なし。汎用デフォルト50%ではない）", () => {
+    expect(P("瞬息万変").ctrlChance).toBe(1);
+  });
+
+  it("先陣の勇: 威圧は1ターンのまま、自身の速度+20だけ2ターン続く", () => {
+    const s = P("先陣の勇");
+    expect(s.duration).toBe(1); // 威圧の持続
+    expect(s.upSelfDur).toBe(2); // 自身の速度+20の持続は文面どおり2ターン
+    expect(s.upStats).toEqual([{ idx: 3, amount: 20 }]);
+    // 行動開始ログの実効速度で確認: 発動の翌ターンも所持者の速度が+20されている（従来は共有持続で1ターンで切れた）
+    const holder: Squad = { ...emptySquad(), generals: ["g-鈴木佐大夫", "g-北条氏康", "g-武田信玄"], tactics: ["t-先陣の勇", null, null, null, null, null] };
+    let verified = 0;
+    for (let i = 0; i < 80 && verified < 2; i++) {
+      const rep = runSimulation(holder, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      const logs = rep?.logs ?? [];
+      const fired = logs.find(l => l.tacticName === "先陣の勇" && l.kind === "戦法" && l.actorSide === "自軍");
+      if (!fired || fired.turn >= 7) continue;
+      const base = logs.find(l => l.kind === "行動開始" && l.turn === 1 && l.actor === "鈴木佐大夫" && l.actorSide === "自軍");
+      const next = logs.find(l => l.kind === "行動開始" && l.turn === fired.turn + 1 && l.actor === "鈴木佐大夫" && l.actorSide === "自軍");
+      if (base && next && next.actorSpeed === base.actorSpeed + 20) verified++;
+    }
+    expect(verified).toBeGreaterThan(0);
+  });
+});
