@@ -865,7 +865,7 @@ describe("2026-11-11 fix wave (audit-driven parse fixes)", () => {
   it("継続ダメージ: 持続ダメージ型・括弧内範囲型・消滅・並記を読む", () => {
     expect(P("紅蓮の炎").dots).toEqual([{ kind: "火傷", rate: 74, type: "計略" }]);
     expect(P("破天の轟").dots).toEqual([{ kind: "火傷", rate: 105, type: "計略" }]);
-    expect(P("大智不智").dots).toEqual([{ kind: "消滅", rate: 104, type: "計略" }]);
+    expect(P("大智不智").dots).toEqual([{ kind: "消沈", rate: 104, type: "計略" }]); // 状態名はゲーム内全文で「消沈」（2026-11-11 スクリーンショットで確定。旧マスターの「消滅」は誤記）
     expect(P("積水成淵").dots).toEqual([{ kind: "水攻め", rate: 88, type: "計略" }]); // 全角％
     expect(PI("梟雄の計").dots).toEqual(expect.arrayContaining([{ kind: "中毒", rate: 96, type: "計略" }, { kind: "火傷", rate: 96, type: "計略" }]));
   });
@@ -897,7 +897,7 @@ describe("2026-11-11 fix wave (audit-driven parse fixes)", () => {
   });
   it("制御の付与確率: 文面の確率を読む（気炎万丈85%）。括弧内の持続抽選は読まない", () => {
     expect(P("気炎万丈").ctrlChance).toBeCloseTo(0.85);
-    expect(PI("不意打ち").ctrlChance).toBe(0.5); // 65%は「2ターンの間」の抽選
+    expect(PI("不意打ち").ctrlChance).toBe(1); // ゲーム内全文で確定: 付与に独立した確率はなく発動確率45%が関門。65%は「2ターンの間」の持続抽選（2026-11-11 スクリーンショット）
     expect(PI("地黄八幡").ctrlChance).toBeCloseTo(0.36);
   });
   it("戦意消沈: 「1ターン目と3ターン目」を列挙として読み、両ターンに発動する", () => {
@@ -941,5 +941,128 @@ describe("2026-11-11 fix wave (audit-driven parse fixes)", () => {
     expect(activeTraitNames(byName("お初"), 5)).toEqual(expect.arrayContaining(["手足之愛", "弓槍術Ⅱ", "攻勢Ⅱ"]));
     expect(activeTraitNames(byName("上泉信綱"), 5)).toContain("血気Ⅰ");
     expect(normSquad({ ...emptySquad(), generals: ["g-お初", "g-お江", "g-上泉信綱"] }).generals).toEqual(["g-お初", "g-お江", "g-上泉信綱"]);
+  });
+});
+
+describe("2026-11-11 screenshot wave （全文スクリーンショット: 竜騎兵・奇策制勝・所領役帳・鉄砲僧兵・持続修正）", () => {
+  const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+  const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+
+  it("5凸特性名: お江・お初=知恵Ⅱ、柳生宗厳=武威Ⅰ（特性マスターに実在する）", () => {
+    const byName = (n: string) => GENERALS.find(g => g.name === n)!;
+    expect(activeTraitNames(byName("お江"), 5)).toContain("知恵Ⅱ");
+    expect(activeTraitNames(byName("お初"), 5)).toContain("知恵Ⅱ");
+    expect(activeTraitNames(byName("柳生宗厳"), 5)).toContain("武威Ⅰ");
+    expect(traitFor("知恵Ⅱ")).toBeDefined();
+    expect(traitFor("武威Ⅰ")).toBeDefined();
+  });
+
+  it("全文パース: 竜騎兵は専用フラグ、奇策制勝は心攻+4%/最大4重ね、所領役帳は回生66%・確率50%", () => {
+    expect(P("竜騎兵").ryukihei).toBe(true);
+    expect(P("一刀両断").ryukihei).toBe(false);
+    const kisaku = P("奇策制勝");
+    expect(kisaku.grant.心攻).toBe(4); // 旧フォールバックの固定20ではない
+    expect(kisaku.kindBuffs).toContainEqual({ kind: "能動", delta: 0.28, inherentOnly: true });
+    const shoryo = P("所領役帳");
+    expect(shoryo.heal).toBe(212);
+    expect(shoryo.grant.回生).toBe(66);
+    expect(shoryo.rebirthChance).toBeCloseTo(0.5);
+    const sohei = P("鉄砲僧兵");
+    expect(sohei.grant.休養).toBe(48); // 旧フォールバック50ではない
+    expect(sohei.upAll).toBe(true); // 「自軍全体の統率と知略」全文どおり部隊全体
+    expect(sohei.upStats).toEqual(expect.arrayContaining([{ idx: 0, amount: 12 }, { idx: 2, amount: 12 }]));
+  });
+
+  it("全文パース: 持続・確率・ステータス修正（瞬息万変/沈魚落雁/先陣の勇/不意打ち/破天の轟/大智不智）", () => {
+    expect(P("瞬息万変").duration).toBe(1); // 混乱1ターン（旧デフォルト2は誤り）
+    expect(P("瞬息万変").dmg).toEqual([{ type: "計略", rate: 162 }]);
+    const chingyo = P("沈魚落雁");
+    expect(chingyo.duration).toBe(1);
+    expect(chingyo.ctrlChance).toBeCloseTo(0.36);
+    expect(chingyo.ctrlPickOne).toBe(true);
+    expect(chingyo.reactive).toBe(true);
+    const senjin = P("先陣の勇");
+    expect(senjin.duration).toBe(1); // 威圧1ターン
+    expect(senjin.ctrlChance).toBeCloseTo(0.35);
+    expect(senjin.upStats).toEqual([{ idx: 3, amount: 20 }]); // 自身の速度+20
+    const fuiuchi = P("不意打ち");
+    expect(fuiuchi.ctrlChance).toBe(1); // 付与に独立確率はなく発動率45%が関門
+    expect(fuiuchi.durRoll).toBe(true); // 持続は35%で1ターン・65%で2ターン
+    expect(fuiuchi.prepTurns).toBe(1);
+    expect(fuiuchi.ctrlPickOne).toBe(true);
+    const haten = P("破天の轟");
+    expect(haten.downStats).toEqual([{ idx: 0, amount: 20 }]); // 統率-20
+    expect(haten.dots).toEqual([{ kind: "火傷", rate: 105, type: "計略" }]);
+    expect(haten.duration).toBe(2);
+    const daichi = P("大智不智");
+    expect(daichi.duration).toBe(2);
+    expect(daichi.dots).toEqual([{ kind: "消沈", rate: 104, type: "計略" }]);
+    expect(daichi.grantTaken).toEqual([{ type: "兵刃", delta: 0.2 }]);
+  });
+
+  it("竜騎兵: 弾丸は戦闘開始時0発で、1ターン目は装填のみ・2ターン目以降に発射してダメージを与える", () => {
+    const squad: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-伊達政宗", "g-伊達輝宗", "g-伊達晴宗"], tactics: ["t-竜騎兵", null, null, null, null, null] };
+    let shots = 0;
+    for (let i = 0; i < 10; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      const hits = (rep?.logs ?? []).filter(l => l.tacticName === "竜騎兵");
+      // 弾丸は初期0発なので、1ターン目（turn=1）に発射ログは絶対に現れない
+      expect(hits.every(l => l.turn >= 2)).toBe(true);
+      shots += hits.filter(l => (l.damage ?? 0) > 0).length;
+    }
+    expect(shots).toBeGreaterThan(10); // 10戦で十分な発射数（装填→発射のサイクルが回っている）
+  });
+
+  it("不意打ち: 発動した戦闘では対象に制御が必ず付く（独立した付与抽選はない）", () => {
+    const holder: Squad = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-不意打ち", null, null, null, null, null] };
+    let fired = 0, controlled = 0;
+    for (let i = 0; i < 60; i++) {
+      const rep = runSimulation(holder, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      const logs = rep?.logs ?? [];
+      const f = logs.filter(l => l.tacticName === "不意打ち" && l.kind === "戦法");
+      if (!f.length) continue;
+      fired++;
+      // 発動ログと同ターンに、対象への制御付与（戦法ログの effects か制御ログ）が伴う
+      const turn = f[0]!.turn;
+      if (logs.some(l => l.turn === turn && l.tacticName === "不意打ち" && (l.effects.includes("無策") || l.effects.includes("封撃")))) controlled++;
+    }
+    expect(fired).toBeGreaterThan(5);
+    expect(controlled).toBe(fired); // 発動すれば必ず付与される（旧仕様は50%で外れた）
+  });
+
+  it("奇策制勝: 装備すると固有能動の与ダメージが伸びる（+28%バフ＋心攻スタックが生きている）", () => {
+    const base: Squad = { ...emptySquad(), generals: ["g-真田昌幸", "g-真田信幸", "g-真田信繁"] };
+    const withK: Squad = { ...base, tactics: ["t-奇策制勝", null, null, null, null, null] };
+    const dealt = (sq: Squad) => {
+      let total = 0;
+      for (let i = 0; i < 40; i++) {
+        const rep = runSimulation(sq, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+        total += rep?.units.find(u => u.name === "真田昌幸")?.dealt ?? 0;
+      }
+      return total;
+    };
+    // 昌幸の固有「表裏比興」は能動55%。奇策制勝の固有能動+28%と、発動成功ごとの心攻スタック（+4%×最大4）で総与ダメが明確に増える
+    expect(dealt(withK)).toBeGreaterThan(dealt(base) * 1.05);
+  });
+
+  it("鉄砲僧兵: 休養の回復は1/2/5/6ターン目だけに現れる", () => {
+    const squad: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-本願寺顕如", "g-長宗我部元親", "g-島津貴久"], tactics: ["t-鉄砲僧兵", null, null, null, null, null] };
+    const turns = new Set<number>();
+    for (let i = 0; i < 10; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) if (l.tacticName === "鉄砲僧兵・休養") turns.add(l.turn);
+    }
+    expect(turns.size).toBeGreaterThan(0);
+    for (const t of turns) expect([1, 2, 5, 6]).toContain(t); // ログの turn は1始まり
+  });
+
+  it("沈魚落雁: 通常攻撃を受けた側が攻撃者に制御を付与する（反応制御）", () => {
+    const holder: Squad = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-沈魚落雁", null, null, null, null, null] };
+    let seen = false;
+    for (let i = 0; i < 60 && !seen; i++) {
+      const rep = runSimulation(holder, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      if ((rep?.logs ?? []).some(l => l.kind === "制御" && l.tacticName === "沈魚落雁" && l.actor === "北条氏康")) seen = true;
+    }
+    expect(seen).toBe(true);
   });
 });

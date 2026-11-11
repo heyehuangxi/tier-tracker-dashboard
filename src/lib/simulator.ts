@@ -114,7 +114,7 @@ export function weaponBase(atkWu: number, defTong: number, troops: number, multi
 type DmgKind = "兵刃" | "計略";
 type StatModSpec = { idx: number; amount: number };
 type DotSpec = { kind: string; rate: number; type: DmgKind };
-type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; targetsRange: boolean; healRange: boolean; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; typeBuffs: { type: DmgKind; delta: number }[]; kindBuffs: { kind: string; delta: number; inherentOnly: boolean }[]; naBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; typeTaken: { type: DmgKind; delta: number }[]; kindTaken: { kind: string; delta: number }[]; naTaken: number; dots: DotSpec[]; dotChance: number; dotPickOne: boolean; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined; reactive: boolean; targetLeader: boolean; reactHeal?: { chance: number; rate: number; statIdx: number } | undefined; healStatIdx: number; healSelf: boolean; healCount: number; ctrlPickOne: boolean; reactDmg?: { onType: DmgKind; chance: number; type: DmgKind; rate: number; targets: number; naOnly?: boolean } | undefined; guardRate?: number | undefined; guardEvade?: number | undefined; healPlusOne: boolean; healAllChance: number; grantTaken: { type: DmgKind; delta: number }[]; earlyTaken?: { delta: number; turns: number; statIdx?: number | undefined } | undefined; bihei: boolean; actSelf: number; dmgStack?: { per: number; max: number } | undefined; teppekiToLeader: boolean; fukutsu: boolean; selfDmgDown: number; flexDmg: number; ctrlChance: number; actSelfRush: number; actSelfInherent: number; actAlly?: { delta: number; inherentOnly: boolean } | undefined; actLeader: number; allyStrike: number; onceTurns?: number[] | undefined };
+type TSpec = { name: string; grade: string; kind: string; prob: number; inner: number; dmg: { type: DmgKind; rate: number }[]; targets: number; targetsRange: boolean; healRange: boolean; heal: number; healAll: boolean; grant: Partial<Record<"回生" | "休養" | "離反" | "心攻", number>>; prepare: boolean; ctrl: boolean; healCut: number; downStats: StatModSpec[]; upStats: StatModSpec[]; upAll: boolean; dmgBuff: number; typeBuffs: { type: DmgKind; delta: number }[]; kindBuffs: { kind: string; delta: number; inherentOnly: boolean }[]; naBuff: number; dmgDown: number; ctrlKinds: string[]; priority: boolean; duration: number; prepTurns: number; cooldown: boolean; inherent: boolean; crit: number; kishaku: number; rengeki: number; evade: number; takenDown: number; typeTaken: { type: DmgKind; delta: number }[]; kindTaken: { kind: string; delta: number }[]; naTaken: number; dots: DotSpec[]; dotChance: number; dotPickOne: boolean; taunt: boolean; cleanse: number; teppeki: number; teppekiChance: number; auraUntil: number; ranbu: number; onceTurn?: number | undefined; fromTurn?: number | undefined; reactive: boolean; targetLeader: boolean; reactHeal?: { chance: number; rate: number; statIdx: number } | undefined; healStatIdx: number; healSelf: boolean; healCount: number; ctrlPickOne: boolean; reactDmg?: { onType: DmgKind; chance: number; type: DmgKind; rate: number; targets: number; naOnly?: boolean } | undefined; guardRate?: number | undefined; guardEvade?: number | undefined; healPlusOne: boolean; healAllChance: number; grantTaken: { type: DmgKind; delta: number }[]; earlyTaken?: { delta: number; turns: number; statIdx?: number | undefined } | undefined; bihei: boolean; actSelf: number; dmgStack?: { per: number; max: number } | undefined; teppekiToLeader: boolean; fukutsu: boolean; selfDmgDown: number; flexDmg: number; ctrlChance: number; actSelfRush: number; actSelfInherent: number; actAlly?: { delta: number; inherentOnly: boolean } | undefined; actLeader: number; allyStrike: number; onceTurns?: number[] | undefined; rebirthChance: number; durRoll: boolean; ryukihei: boolean };
 export type { TSpec };
 const maxPct = (re: RegExp, e: string) => { const m = e.match(re); return m ? Number(m[m.length - 1]) : 0; };
 // 対象数「2〜3名」の抽選（ユーザー指定 2026-11-11: 2名が65%・3名が35%、発動ごとに抽選する）。
@@ -127,7 +127,7 @@ function statChanges(e: string, verb: "低下" | "増加"): StatModSpec[] {
   const out = new Map<number, number>();
   const names = "((?:統率|武勇|知略|速度)(?:[・と](?:統率|武勇|知略|速度))*)";
   const res = verb === "低下"
-    ? [new RegExp(`${names}を低下（(?:[\\d.]+)〜([\\d.]+)）`, "g"), new RegExp(`${names}が([\\d.]+)減少`, "g"), new RegExp(`${names}を(?:\\d+ターンの間、)?([\\d.]+)減少`, "g"), new RegExp(`${names}を([\\d.]+)低下`, "g"), new RegExp(`${names}を(?:[\\d.]+)[〜→]([\\d.]+)低下`, "g"), new RegExp(`${names}を(?:[\\d.]+)[〜→]([\\d.]+)減少`, "g"), new RegExp(`${names}が(?:[\\d.]+)[〜→]([\\d.]+)減少`, "g")]
+    ? [new RegExp(`${names}を低下（(?:[\\d.]+)〜([\\d.]+)）`, "g"), new RegExp(`${names}が([\\d.]+)減少`, "g"), new RegExp(`${names}を(?:\\d+ターンの間、)?([\\d.]+)減少`, "g"), new RegExp(`${names}を([\\d.]+)低下`, "g"), new RegExp(`${names}を(?:[\\d.]+)[〜→]([\\d.]+)低下`, "g"), new RegExp(`${names}を(?:[\\d.]+)[〜→]([\\d.]+)減少`, "g"), new RegExp(`${names}が(?:[\\d.]+)[〜→]([\\d.]+)減少`, "g"), new RegExp(`${names}が(?:[\\d.]+)[〜→]([\\d.]+)低下`, "g")]
     : [new RegExp(`${names}が(?:[\\d.]+)〜([\\d.]+)(?!%)増加`, "g"), new RegExp(`${names}が([\\d.]+)(?:（[^）]*）)?(?:増加|上昇)`, "g"), new RegExp(`${names}(?:[\\d.]+)[〜→]([\\d.]+)増加`, "g"), new RegExp(`${names}を([\\d.]+)増加`, "g")];
   for (const re of res) for (const m of e.matchAll(re)) {
     const amount = Number(m[2]);
@@ -181,13 +181,16 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   };
   if (/離反/.test(e)) grant.離反 = grantRate("離反") || 20;
   if (/心攻/.test(e)) grant.心攻 = grantRate("心攻") || 20;
+  // 回生の発動確率（所領役帳「ダメージを受けるたびに25%→50%の確率で兵力を回復」）は回復率とは別の数値として読む（ゲーム内全文で確定）
+  const rebirthM = e.match(/回生を付与し、ダメージを受けるたびに(?:[\d.]+)%[〜→]([\d.]+)%の確率/);
+  const rebirthChance = rebirthM ? Number(rebirthM[1]) / 100 : 0;
   // 「N%の確率で自軍全体を回復」（千成瓢箪）は全体回復の抽選であり戦法自体の発動率ではないため、inner の抽出からは除外する
   const healAllM = e.match(/([\d.]+)%の確率で(?:自軍|友軍)全体を回復/);
   const healAllChance = healAllM ? Number(healAllM[1]) / 100 : 0;
   const innerM = (healAllM ? e.replace(healAllM[0], "") : e).match(/(?:[\d.]+%[〜→])?([\d.]+)%の確率/);
   const ctrlKinds = ["麻痺", "混乱", "封撃", "無策", "威圧", "疲弊"].filter(k => e.includes(k));
   // 制御が「いずれか／1つ／ランダム」と列挙されている場合は、対象ごとに1種だけ付与する
-  const ctrlPickOne = ctrlKinds.length > 1 && /(いずれか|の1つ|1種|ランダム)/.test(e);
+  const ctrlPickOne = ctrlKinds.length > 1 && /(いずれか|の1つ|を1つ|1種|ランダム)/.test(e);
   // 制御の付与確率: 制御名を含む文に「N%の確率」や「毎ターンN%〜M%で」とあればその最大値を、無ければ従来の一律50%（気炎万丈の85%など）
   let ctrlChance = 0.5;
   if (ctrlKinds.length) {
@@ -198,6 +201,8 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
       if (m) { ctrlChance = Number(m[m.length - 1]) / 100; break; }
     }
   }
+  // 不意打ち（ゲーム内全文で確定）: 制御付与に独立した確率はなく、戦法の発動確率（45%）そのものが関門になる
+  if (name === "不意打ち") ctrlChance = 1;
   // 持続ターン: 「Nターン準備後」の N は準備であり持続ではないので除いてから読む。「Nターンの間」を優先（五里霧中・水攻干計・陣形崩しなど）
   const durText = e.replace(/\d+ターンの?準備後/g, "");
   const durM = durText.match(/(\d+)ターンの間/) ?? durText.match(/(\d+)ターン/);
@@ -356,16 +361,16 @@ export function parseTactic(name: string, kind: string, rate: string, e: string,
   const targets = /敵軍全体|敵全体/.test(e) ? 3 : /のうち1名/.test(e) ? 1 : /敵軍複数|敵複数/.test(e) ? 2 : /敵軍単体|敵単体/.test(e) ? 1 : /全体/.test(e) ? 3 : /複数/.test(e) ? 2 : 1;
   // 敵対象が「敵軍複数（2〜3名）」の範囲表記なら、基礎値は2のまま発動ごとに rollRange23 で決める
   const targetsRange = /敵軍?複数（[2２][〜～~][3３][名人]）/.test(e);
-  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets, targetsRange, healRange, heal: reactHeal ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : Math.max(maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, /回復不可|回復不能/.test(e) ? 1 : 0), downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff, typeBuffs, kindBuffs, naBuff, dmgDown, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade: guardRate ? 0 : evade, takenDown, typeTaken, kindTaken, naTaken, dots, dotChance, dotPickOne, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu, onceTurn, fromTurn, reactive: guardRate ? false : reactive, targetLeader, reactHeal, healStatIdx, healSelf, healCount, ctrlPickOne, reactDmg, guardRate, guardEvade, healPlusOne, healAllChance, grantTaken, earlyTaken, bihei, actSelf, dmgStack, teppekiToLeader, fukutsu, selfDmgDown, flexDmg, ctrlChance, actSelfRush, actSelfInherent, actAlly, actLeader, allyStrike, onceTurns };
+  return { name, grade, kind, prob, inner: innerM ? Number(innerM[1]) / 100 : 1, dmg, targets, targetsRange, healRange, heal: reactHeal ? 0 : heal, healAll: /自軍(複数|全体)/.test(e), grant, prepare: /準備後/.test(e), ctrl: ctrlKinds.length > 0, healCut: name === "荷駄崩し" ? 0.5 : Math.max(maxPct(/受ける回復効果が(?:[\d.]+%[〜→])?([\d.]+)%低下/, e) / 100, /回復不可|回復不能/.test(e) ? 1 : 0), downStats: statChanges(e, "低下"), upStats: statChanges(e, "増加"), upAll: /(自軍|友軍)(全体|複数)/.test(e), dmgBuff, typeBuffs, kindBuffs, naBuff, dmgDown, ctrlKinds, priority: /先攻/.test(e), duration: durM ? Math.max(1, Math.min(3, Number(durM[1]))) : 2, prepTurns: opts.prepTurns ?? (e.match(/(\d+)ターンの準備後/) ? Number(e.match(/(\d+)ターンの準備後/)![1]) : /準備後/.test(e) ? 1 : 0), cooldown: /再発動不可|クールタイム/.test(e), inherent: opts.inherent ?? false, crit, kishaku, rengeki, evade: guardRate ? 0 : evade, takenDown, typeTaken, kindTaken, naTaken, dots, dotChance, dotPickOne, taunt, cleanse, teppeki, teppekiChance, auraUntil, ranbu, onceTurn, fromTurn, reactive: guardRate ? false : reactive, targetLeader, reactHeal, healStatIdx, healSelf, healCount, ctrlPickOne, reactDmg, guardRate, guardEvade, healPlusOne, healAllChance, grantTaken, earlyTaken, bihei, actSelf, dmgStack, teppekiToLeader, fukutsu, selfDmgDown, flexDmg, ctrlChance, actSelfRush, actSelfInherent, actAlly, actLeader, allyStrike, onceTurns, rebirthChance, durRoll: name === "不意打ち", ryukihei: name === "竜騎兵" };
 }
 
 const onceOk = (s: TSpec, turn: number) => s.onceTurns ? s.onceTurns.includes(turn) : s.onceTurn === undefined || turn === s.onceTurn;
 
-type Status = { rate: number; until: number };
+type Status = { rate: number; until: number; chance?: number };
 type StatMod = { idx: number; delta: number; until: number };
 type RateMod = { rate: number; type: DmgKind | "両方"; until: number };
 type DotState = { kind: string; rate: number; type: DmgKind; until: number; src: Unit; mine: boolean; ignoreDef?: boolean };
-type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; troops: number; max: number; specs: TSpec[]; status: Partial<Record<"回生" | "休養" | "離反" | "心攻", Status>>; healCutUntil: number; healCut: number; stunned: boolean; pending: { s: TSpec; delay: number }[]; mods: StatMod[]; dmgMods: { delta: number; until: number }[]; ctrls: { kind: string; until: number }[]; priorityUntil: number; dealtBy: number; healedBy: number; cooldownUntil: Map<string, number>; critMods: RateMod[]; rengekiMods: { rate: number; until: number }[]; evadeMods: { rate: number; until: number }[]; takenMods: { delta: number; until: number }[]; dots: DotState[]; taunt: { src: Unit; until: number } | null; teppeki: number; tame: number; gunshin: boolean; isLeader: boolean; ranbuMods: { rate: number; until: number }[]; sui: number; suiBoosts: number; suiHitsB: number; suiHitsS: number; hasSui: boolean; ikkiActive: boolean; ikkiChance: number; hasIkki: boolean; traits: string[]; traitSet: Set<string>; typeDmgMods: { type: DmgKind; delta: number; until: number }[]; typeTakenMods: { type: DmgKind; delta: number; until: number }[]; critDmgMods: { type: DmgKind | "両方"; delta: number; until: number }[]; bonusCrit: { b: number; s: number; dmgB: number; dmgS: number }; shieldNext: number; ctrlResists: { rate: number; left: number; untilTurn: number }[]; naEvade: number; targetWeight: number; tacticTargetWeight: number; wasHitTurn: number; dealtTurn: number; nextDmg: { delta: number; left: number }; actProbMods: { kind: string; inherent: boolean | null; delta: number; notHitOnly: boolean; untilTurn: number }[]; counters: Record<string, number>; naDmgBonus: number; naBuffMods: { delta: number; until: number }[]; kindDmgMods: { kind: string; delta: number; until: number; inherentOnly: boolean }[]; kindTakenMods: { kind: string; delta: number; until: number }[]; naTakenMods: { delta: number; until: number }[]; guard: { src: Unit; rate: number; until: number } | null; engoUntil: number; engoCharges: number; biheiPool: number; biheiUntil: number; pendingStrike: { atTurn: number; rate: number } | null };
+type Unit = { name: string; side: "自軍" | "敵軍"; slot: number; st: Stats; troops: number; max: number; specs: TSpec[]; status: Partial<Record<"回生" | "休養" | "離反" | "心攻", Status>>; healCutUntil: number; healCut: number; stunned: boolean; pending: { s: TSpec; delay: number }[]; mods: StatMod[]; dmgMods: { delta: number; until: number }[]; ctrls: { kind: string; until: number }[]; priorityUntil: number; dealtBy: number; healedBy: number; cooldownUntil: Map<string, number>; critMods: RateMod[]; rengekiMods: { rate: number; until: number }[]; evadeMods: { rate: number; until: number }[]; takenMods: { delta: number; until: number }[]; dots: DotState[]; taunt: { src: Unit; until: number } | null; teppeki: number; tame: number; gunshin: boolean; isLeader: boolean; ranbuMods: { rate: number; until: number }[]; sui: number; suiBoosts: number; suiHitsB: number; suiHitsS: number; hasSui: boolean; ikkiActive: boolean; ikkiChance: number; hasIkki: boolean; traits: string[]; traitSet: Set<string>; typeDmgMods: { type: DmgKind; delta: number; until: number }[]; typeTakenMods: { type: DmgKind; delta: number; until: number }[]; critDmgMods: { type: DmgKind | "両方"; delta: number; until: number }[]; bonusCrit: { b: number; s: number; dmgB: number; dmgS: number }; shieldNext: number; ctrlResists: { rate: number; left: number; untilTurn: number }[]; naEvade: number; targetWeight: number; tacticTargetWeight: number; wasHitTurn: number; dealtTurn: number; nextDmg: { delta: number; left: number }; actProbMods: { kind: string; inherent: boolean | null; delta: number; notHitOnly: boolean; untilTurn: number }[]; counters: Record<string, number>; naDmgBonus: number; naBuffMods: { delta: number; until: number }[]; kindDmgMods: { kind: string; delta: number; until: number; inherentOnly: boolean }[]; kindTakenMods: { kind: string; delta: number; until: number }[]; naTakenMods: { delta: number; until: number }[]; guard: { src: Unit; rate: number; until: number } | null; engoUntil: number; engoCharges: number; biheiPool: number; biheiUntil: number; pendingStrike: { atTurn: number; rate: number } | null; bullets: number };
 const FALLBACK: Stats = [160, 150, 160, 100];
 function buildUnits(q: Squad): Unit[] {
   const bonus = hasFactionBonus(q.generals);
@@ -405,7 +410,7 @@ function buildUnits(q: Squad): Unit[] {
     }
     // 七十二の計は汎用パースでは毎ターン全体ダメージになってしまうため、専用処理（発動回数カウント）に委ねる
     for (const s of specs) if (s.name === "七十二の計") s.dmg = [];
-    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: startTroops, max: startTroops, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0, ranbuMods: [], sui: inh?.name === "伊達の粋" ? 5 : 0, suiBoosts: 0, suiHitsB: 0, suiHitsS: 0, hasSui: inh?.name === "伊達の粋", ikkiActive: false, ikkiChance: 0.3, hasIkki: inh?.name === "一切皆空", traits: g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : [], traitSet: new Set(g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : []), typeDmgMods: [], typeTakenMods: [], critDmgMods: [], bonusCrit: { b: 0, s: 0, dmgB: 0, dmgS: 0 }, shieldNext: 0, ctrlResists: [], naEvade: 0, targetWeight: 1, tacticTargetWeight: 1, wasHitTurn: -1, dealtTurn: -1, nextDmg: { delta: 0, left: 0 }, actProbMods: [], counters: {}, naDmgBonus: 0, naBuffMods: [], kindDmgMods: [], kindTakenMods: [], naTakenMods: [], guard: null, engoUntil: -1, engoCharges: 0, biheiPool: 0, biheiUntil: -1, pendingStrike: null };
+    const u: Unit = { name: g?.name ?? `武将${i + 1}`, side: "自軍", slot: i, st, troops: startTroops, max: startTroops, specs, status: {}, healCutUntil: -1, healCut: 0, stunned: false, pending: [], mods: [], dmgMods: [], ctrls: [], priorityUntil: -1, dealtBy: 0, healedBy: 0, cooldownUntil: new Map(), critMods: [], rengekiMods: [], evadeMods: [], takenMods: [], dots: [], taunt: null, teppeki: 0, tame: 0, gunshin: inh?.name === "軍神", isLeader: i === 0, ranbuMods: [], sui: inh?.name === "伊達の粋" ? 5 : 0, suiBoosts: 0, suiHitsB: 0, suiHitsS: 0, hasSui: inh?.name === "伊達の粋", ikkiActive: false, ikkiChance: 0.3, hasIkki: inh?.name === "一切皆空", traits: g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : [], traitSet: new Set(g ? activeTraitNames(g, q.ranks?.[i] ?? 0) : []), typeDmgMods: [], typeTakenMods: [], critDmgMods: [], bonusCrit: { b: 0, s: 0, dmgB: 0, dmgS: 0 }, shieldNext: 0, ctrlResists: [], naEvade: 0, targetWeight: 1, tacticTargetWeight: 1, wasHitTurn: -1, dealtTurn: -1, nextDmg: { delta: 0, left: 0 }, actProbMods: [], counters: {}, naDmgBonus: 0, naBuffMods: [], kindDmgMods: [], kindTakenMods: [], naTakenMods: [], guard: null, engoUntil: -1, engoCharges: 0, biheiPool: 0, biheiUntil: -1, pendingStrike: null, bullets: 0 };
     // 一上一下・越後流軍学など: 文面の「自身の能動戦法発動率+N%」を汎用パース（actSelf）から適用する（越後流軍学の+20%もここに含まれる）
     for (const s of specs) {
       if (s.actSelf) u.actProbMods.push({ kind: "能動", inherent: null, delta: s.actSelf, notHitOnly: false, untilTurn: 99 });
@@ -418,7 +423,8 @@ function buildUnits(q: Squad): Unit[] {
     if (specs.some(s => s.name === "七十二の計")) u.critDmgMods.push({ type: "計略", delta: 0.3, until: 99 });
     // 受動・指揮・兵種の付与系（休養・離反・心攻など）は戦闘開始から常時
     // 古今独歩の離反は反撃が当たるたびに4%ずつ重なる専用処理のため、ここでは付与しない
-    for (const s of specs) if (s.prob >= 1 && s.kind !== "突撃" && s.kind !== "能動") for (const [k, v] of Object.entries(s.grant)) if (k !== "回生" && !(s.name === "古今独歩" && k === "離反")) u.status[k as keyof Unit["status"]] = { rate: v!, until: 99 };
+    // 奇策制勝の心攻は固有能動の発動成功ごとに重なる専用処理、鉄砲僧兵の休養は1/2/5/6ターン目だけの専用処理のため、どちらも常時付与しない
+    for (const s of specs) if (s.prob >= 1 && s.kind !== "突撃" && s.kind !== "能動") for (const [k, v] of Object.entries(s.grant)) if (k !== "回生" && !(s.name === "古今独歩" && k === "離反") && !(s.name === "奇策制勝" && k === "心攻") && !(s.name === "鉄砲僧兵" && k === "休養")) u.status[k as keyof Unit["status"]] = { rate: v!, until: 99 };
     return u;
   });
   // 指揮・受動の常時効果（オーラ）: ステータス上昇・与ダメージ上昇・被ダメージ軽減・会心・連撃・回避を戦闘開始から適用
@@ -782,7 +788,8 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     const steal = active(src, type === "兵刃" ? "離反" : "心攻", turn);
     if (steal) flatHeal(src, src, d * steal.rate / 100, turn, mine, type === "兵刃" ? "離反" : "心攻");
     const rebirth = active(dst, "回生", turn);
-    if (rebirth && dst.troops > 0) doHeal(dst, dst, rebirth.rate, turn, !mine, "回生");
+    // 回生に発動確率がある場合（所領役帳: 被ダメージ時50%）は確率判定も行う。回復率は rate 側（66%・知略依存）に分かれている
+    if (rebirth && dst.troops > 0 && (rebirth.chance === undefined || Math.random() < rebirth.chance)) doHeal(dst, dst, rebirth.rate, turn, !mine, "回生");
     // 反応回復（鬼美濃など）: ダメージを受けた際、確率で自身の弱体化効果を浄化してから自身を回復する
     const rh = dst.specs.find(s => s.reactHeal);
     if (rh?.reactHeal && dst.troops > 0 && d > 0 && Math.random() < rh.reactHeal.chance) {
@@ -799,6 +806,18 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     if (dst.guard && turn <= dst.guard.until && d > 0 && dst.troops > 0 && src.troops > 0 && dst.guard.src.troops > 0) {
       const g = dst.guard; dst.guard = null;
       damage(g.src, src, "兵刃", g.rate, !mine, turn, { label: "援護射撃", grade: "S", kind: "能動" });
+    }
+    // 反応制御（沈魚落雁）: 通常攻撃を受けた際、確率で攻撃者に制御を1種付与する（対象は通常攻撃を仕掛けた側。持続は文面どおり1ターン）
+    if (ctx.kind === "通常攻撃" && d > 0 && dst.troops > 0 && src.troops > 0) for (const s of dst.specs) {
+      if (!s.reactive || !s.ctrl || !s.ctrlKinds.length) continue;
+      if (Math.random() >= s.ctrlChance) continue;
+      const kindName = s.ctrlPickOne ? s.ctrlKinds[Math.floor(Math.random() * s.ctrlKinds.length)]! : s.ctrlKinds[0]!;
+      let blocked = false;
+      for (const r of src.ctrlResists) if (r.left > 0 && turn <= r.untilTurn && Math.random() < r.rate) { r.left--; blocked = true; break; }
+      if (blocked) continue;
+      src.ctrls.push({ kind: kindName, until: turn + s.duration - 1 });
+      if (!mine) ctrls++;
+      if (collectLog) logs.push({ turn: turn + 1, kind: "制御", actor: dst.name, actorSide: dst.side, actorTroops: Math.round(dst.troops), actorSpeed: Math.round(effSpeed(dst, turn)), kills: Math.round(dst.dealtBy), healedByActor: Math.round(dst.healedBy), target: src.name, targetSide: src.side, tacticName: s.name, effects: [kindName], segments: [seg(dst), { text: ` の`, tone: "plain" }, { text: s.name, tone: "effect" }, { text: ` で `, tone: "plain" }, seg(src), { text: ` に `, tone: "plain" }, { text: kindName, tone: "effect" }, { text: ` を付与`, tone: "plain" }] });
     }
     return d;
   };
@@ -819,7 +838,13 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     if (s.name !== "七十二の計") trigger72(src, foe, mine, turn);
     if (s.kind === "能動" || s.kind === "突撃") tameTrigger(src, own);
     if (s.cooldown) src.cooldownUntil.set(s.name, turn + 1);
-    const until = turn + s.duration - 1;
+    // 不意打ちの持続は文面どおり発動ごとに抽選する（35%で1ターン・65%で2ターン。この65%は戦法自身の文面の数値で、「2〜3名」ルールとは別）
+    const until = turn + (s.durRoll ? (Math.random() < 0.65 ? 2 : 1) : s.duration) - 1;
+    // 奇策制勝: 自身の固有能動戦法が発動に成功するたび、70%の確率で心攻+4%を獲得する（最大4回まで重ねがけ。常時付与ではない）
+    if (s.inherent && s.kind === "能動" && src.specs.some(x => x.name === "奇策制勝")) {
+      const stacks = src.counters["kisaku"] ?? 0;
+      if (stacks < 4 && Math.random() < 0.7) { src.counters["kisaku"] = stacks + 1; src.status["心攻"] = { rate: 4 * (stacks + 1), until: 99 }; }
+    }
     // --- パイプライン 1: バフ先行適用（このターンの攻撃から即時反映） ---
     const effectNames: string[] = [];
     for (const up of s.upStats) {
@@ -880,6 +905,8 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     // 「敵軍大将に」の戦法は大将（先頭）を狙う
     if (s.targetLeader) { const leader = foe.find(x => x.slot === 0 && x.troops > 0); if (leader) targets = [leader]; }
     if (s.dmg.length && src.taunt && turn <= src.taunt.until && src.taunt.src.troops > 0) targets = [src.taunt.src];
+    // 瞬息万変の条件判定用: この発動で新たに付与する前の「すでに混乱状態だった対象」を記録する
+    const confusedBefore = s.name === "瞬息万変" ? new Set(targets.filter(t => t.ctrls.some(c => c.kind === "混乱" && turn <= c.until))) : new Set<Unit>();
     // --- パイプライン 2: デバフ・制御・継続ダメージ・挑発をダメージ計算の直前に先行適用 ---
     for (const t of targets) {
       for (const down of s.downStats) { t.mods.push({ idx: down.idx, delta: -down.amount, until }); effectNames.push(`${STAT_LABELS[down.idx]}低下`); }
@@ -915,6 +942,13 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
     }
     // 種別が与える側の武勇・知略の高い方で決まるダメージ（楼岸一番・捨て身の采配）
     if (s.flexDmg) for (const t of targets) if (t.troops > 0) damage(src, t, eff(src, 1, turn) >= eff(src, 2, turn) ? "兵刃" : "計略", s.flexDmg, mine, turn, { label: s.name, grade: s.grade, kind: s.kind });
+    // 瞬息万変: 対象がすでに混乱状態だった場合、対象側の他の武将1名がその対象にダメージを与える（158%。種別は発動者の武勇・知略の高い方）
+    if (s.name === "瞬息万変") for (const t of targets) {
+      if (!confusedBefore.has(t) || t.troops <= 0) continue;
+      const others = alive(foe).filter(x => x !== t);
+      const dealer = others[Math.floor(Math.random() * others.length)];
+      if (dealer) damage(dealer, t, eff(src, 1, turn) >= eff(src, 2, turn) ? "兵刃" : "計略", 158, !mine, turn, { label: s.name, grade: s.grade, kind: s.kind });
+    }
     if (s.dmg.length && targets.length > 1 && mine) hits++;
     if (s.heal) {
       // 「自身の兵力を回復」は自身のみ。それ以外は文面の対象数（全体3・複数2・単体1）だけ兵力割合の低い味方から回復する。依存ステータスも文面どおり
@@ -922,7 +956,7 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
       else { const ally = alive(own).sort((x, y) => x.troops / x.max - y.troops / y.max); const n = s.healAllChance && Math.random() < s.healAllChance ? ally.length : s.healRange ? rollRange23() : s.healCount; for (const t of ally.slice(0, n)) doHeal(src, t, s.heal, turn, mine, s.name, s.healStatIdx); }
     }
     if (s.teppeki) { const recipients = s.teppekiToLeader ? (own[0] && own[0].troops > 0 ? [own[0]] : []) : s.heal ? (s.healAll ? alive(own).slice(0, 2) : [src]) : [src]; for (const t of recipients) if (Math.random() < s.teppekiChance) t.teppeki += s.teppeki; }
-    for (const [k, v] of Object.entries(s.grant)) { const who = k === "回生" ? alive(own).sort((x, y) => x.troops - y.troops)[0] : src; if (who) who.status[k as keyof Unit["status"]] = { rate: v!, until: turn + 2 }; }
+    for (const [k, v] of Object.entries(s.grant)) { const who = k === "回生" ? alive(own).sort((x, y) => x.troops - y.troops)[0] : src; if (who) who.status[k as keyof Unit["status"]] = { rate: v!, until: turn + 2, ...(k === "回生" && s.rebirthChance ? { chance: s.rebirthChance } : {}) }; }
   };
   const act = (u: Unit, own: Unit[], foe: Unit[], mine: boolean, turn: number) => {
     // 継続ダメージ（潰走・火傷・水攻め・中毒・消沈・一揆）は行動開始時に発生する
@@ -1096,6 +1130,8 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
       if (mine) dealt += loss; else taken += loss;
       if (collectLog) logs.push({ turn: turn + 1, kind: "状態", actor: u.name, actorSide: u.side, actorTroops: Math.round(u.troops), actorSpeed: Math.round(effSpeed(u, turn)), kills: Math.round(u.dealtBy), healedByActor: Math.round(u.healedBy), target: f.name, targetSide: f.side, damage: Math.round(loss), targetTroopsAfter: Math.round(f.troops), effects: ["魔王"], segments: [seg(u), { text: ` の`, tone: "plain" }, { text: "魔王", tone: "effect" }, { text: ` で `, tone: "plain" }, seg(f), { text: ` が兵力${Math.round(loss)}を損失`, tone: "damage" }] });
     }
+    // 竜騎兵（伊達政宗が装備時）: 自軍武将は行動後に40%の確率で弾丸を1発装填する
+    if (u.troops > 0 && own.some(x => x.troops > 0 && x.name === "伊達政宗" && x.specs.some(s => s.ryukihei)) && Math.random() < 0.4) u.bullets += 1;
   };
   for (let turn = 0; turn < 8; turn++) {
     // 三河武士「不屈」: 前ターンまでに累計の被通常攻撃回数が必要回数へ達していたら、ターン開始時に1回だけ発動する
@@ -1116,6 +1152,30 @@ function fight(a: Squad, b: Squad, collectLog = false): { stat: BattleStat; repo
           damage(ally, t, eff(ally, 1, turn) >= eff(ally, 2, turn) ? "兵刃" : "計略", 82, mine, turn, { label: "不屈", grade: "S", kind: "兵種" });
         }
       }
+    }
+    // 竜騎兵（兵種）: ターン開始時、所持部隊の各武将が弾丸を扱う。弾丸を持っていない武将はそのターン弾丸を1発装填し（25%で2発）、
+    // 弾丸を持っている武将は70%で1発消費して敵単体にダメージ（104%、種別はその武将の武勇と知略の高い方）を与える。
+    // 確率の依存スケーリング（速度依存・武勇と速度依存）は他の依存表記と同じく平坦値で近似する。対象の選び方は文面に無いためランダム単体。
+    // 行軍速度+50%は戦闘外パラメータのため対象外
+    for (const [own, foe, mine] of [[A, B, true], [B, A, false]] as const) {
+      if (!own.some(x => x.troops > 0 && x.specs.some(s => s.ryukihei))) continue;
+      for (const u of own) {
+        if (u.troops <= 0) continue;
+        if (u.bullets <= 0) { u.bullets = Math.random() < 0.25 ? 2 : 1; continue; }
+        if (Math.random() < 0.7) {
+          u.bullets -= 1;
+          const t = pick(alive(foe), 1)[0];
+          if (t) damage(u, t, eff(u, 1, turn) >= eff(u, 2, turn) ? "兵刃" : "計略", 104, mine, turn, { label: "竜騎兵", grade: "S", kind: "兵種" });
+        }
+      }
+    }
+    // 鉄砲僧兵「休養」: 1/2/5/6ターン目（0始まりで0/1/4/5）にだけ、所持部隊の生存全員が回復率48%（回復する武将自身の統率依存）で兵力を1回回復する。
+    // 常時状態としての休養付与はせず、このターン開始処理でのみ回復する（buildUnits 側の常時付与からも除外済み）
+    if (turn === 0 || turn === 1 || turn === 4 || turn === 5) for (const [own, mine] of [[A, true], [B, false]] as const) {
+      const holder = own.find(x => x.troops > 0 && x.specs.some(s => s.name === "鉄砲僧兵"));
+      if (!holder) continue;
+      const rate = holder.specs.find(s => s.name === "鉄砲僧兵")!.grant.休養 ?? 48;
+      for (const u of own) if (u.troops > 0) doHeal(u, u, rate, turn, mine, "鉄砲僧兵・休養", 0);
     }
     // 会盟の陣「副将強化」: 条件成立部隊は毎ターン開始時、その時点の兵力で副将2名を比べ直し、
     // 高い方に与ダメージ+18%・被ダメージ-10%、低い方に与ダメージ+10%・被ダメージ-18%をそのターン付与する
