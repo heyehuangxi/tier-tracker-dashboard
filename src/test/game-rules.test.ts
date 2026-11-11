@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
+import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, pointsFor, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
@@ -374,6 +374,27 @@ describe("Troop level （兵種レベル）", () => {
     expect(rt?.startTroops).toBe(22785);
     expect(normSquad({ generals: [], tactics: [], facLv: 99, startTroops: 99999 }).facLv).toBe(10);
     expect(normSquad({ generals: [], tactics: [], facLv: 99, startTroops: 99999 }).startTroops).toBe(30000);
+  });
+  it("honors the squad alloc base for free/coexist formations (100) and defaults to 50", () => {
+    expect(pointsFor(0)).toBe(50);
+    expect(pointsFor(5)).toBe(100);
+    expect(pointsFor(0, 100)).toBe(100);
+    expect(pointsFor(5, 100)).toBe(150);
+    const big = [[40, 30, 20, 10], [0, 0, 0, 0], [0, 0, 0, 0]];
+    // 初期値100の部隊では合計100の分配がそのまま残る
+    const withBase = normSquad({ ...emptySquad(), alloc: big, allocBase: 100 });
+    expect(withBase.alloc?.[0]).toEqual([40, 30, 20, 10]);
+    expect(withBase.allocBase).toBe(100);
+    // 未指定（従来部隊）は初期値50で丸められる
+    const withoutBase = normSquad({ ...emptySquad(), alloc: big });
+    expect((withoutBase.alloc?.[0] ?? []).reduce((a, b) => a + b, 0)).toBe(50);
+    expect(withoutBase.allocBase).toBeUndefined();
+    // 範囲外の初期値は無効として既定50扱い
+    expect(normSquad({ ...emptySquad(), allocBase: 99999 }).allocBase).toBeUndefined();
+    // 共有リンクの往復でも初期値が保持される
+    const rt = decodeFormation(encodeFormation({ mode: "free", squads: [{ ...emptySquad(), alloc: big, allocBase: 100 }] }))?.squads[0];
+    expect(rt?.allocBase).toBe(100);
+    expect(rt?.alloc?.[0]).toEqual([40, 30, 20, 10]);
   });
   it("uses the squad's starting troops in the battle report totals", () => {
     const squad = { ...emptySquad(), generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], startTroops: 22785 };
