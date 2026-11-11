@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
-import { parseTactic, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
+import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
 import { matchesName } from "@/components/tier/search-select";
@@ -85,6 +85,28 @@ describe("Troops, search and tactics", () => {
     expect(spec.dots.find(d => d.kind === "潰走")?.type).toBe("兵刃");
     expect(spec.duration).toBe(3);
     expect(spec.targets).toBe(2);
+  });
+  it("rolls '2〜3名' target counts at 65% / 35% per activation (user specification 2026-11-11)", () => {
+    const eff = (holder: string) => inherentByHolder.get(holder)?.effect ?? "";
+    // 範囲表記の印付け: 敵対象（旋乾転坤・梟雄の計）。基礎値は2のままで、実際の数は発動ごとに抽選する
+    const senkan = parseTactic("旋乾転坤", "指揮", "100%", eff("島津貴久"), "S", { inherent: true });
+    expect(senkan.targetsRange).toBe(true);
+    expect(senkan.targets).toBe(2);
+    expect(parseTactic("梟雄の計", "能動", "35%", eff("松永久秀"), "S", { inherent: true }).targetsRange).toBe(true);
+    // 回復対象の範囲表記（一心一徳: 自軍複数（2～3名）を回復）
+    expect(parseTactic("一心一徳", "受動", "100%", eff("毛利隆元"), "S", { inherent: true }).healRange).toBe(true);
+    // 固定数・単体の戦法には印が付かない
+    expect(parseTactic("時は今", "能動", "70%", eff("明智光秀"), "S", { inherent: true }).targetsRange).toBe(false);
+    expect(RANGE23_P3).toBe(0.35);
+    // 分布: シード付き乱数で 3名の割合が 35% の近傍（±3pt）に収まる
+    let seed = 42;
+    vi.spyOn(Math, "random").mockImplementation(() => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; });
+    try {
+      const N = 20000; let threes = 0;
+      for (let i = 0; i < N; i++) if (rollRange23() === 3) threes++;
+      expect(threes / N).toBeGreaterThan(0.32);
+      expect(threes / N).toBeLessThan(0.38);
+    } finally { vi.restoreAllMocks(); }
   });
   it("handles 軍神 tame stacks instead of a permanent damage buff", () => {
     const eff = inherentByHolder.get("上杉謙信")?.effect ?? "";
