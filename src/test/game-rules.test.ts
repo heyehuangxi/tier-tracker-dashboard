@@ -125,7 +125,7 @@ describe("Troops, search and tactics", () => {
     expect(logs2.some(l => l.tacticName === "一揆" && (l.damage ?? 0) > 0)).toBe(true);
   });
   it("wires rank traits from the trait dataset into the simulator", () => {
-    expect(TRAITS).toHaveLength(165);
+    expect(TRAITS).toHaveLength(168);
     // 全武将の特性（無凸〜5凸）が表記ゆれ吸収込みで全て引ける
     for (const g of GENERALS) for (const name of activeTraitNames(g, 5)) expect(traitFor(name), `${g.name}:${name}`).toBeDefined();
     // 凸数での解放: 上杉謙信は無凸=義の将、3凸で破敵Ⅱ、5凸で馬術Ⅱ
@@ -739,5 +739,164 @@ describe("2026-11-10 追加修正2（三河武士「不屈」・一領具足の�
       expect(hi?.target).toBe(lo?.target); // 乱数固定なので最初の一撃の対象・条件は同一
       expect(hi?.damage ?? 0).toBeLessThan(lo?.damage ?? 0);
     } finally { random.mockRestore(); }
+  });
+});
+
+describe("2026-11-11 fix wave (audit-driven parse fixes)", () => {
+  const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+  const PI = (name: string) => { const inh = INHERENT_TACTICS.find(x => x.name === name)!; return parseTactic(inh.name, inh.kind, inh.rate, inh.effect, "S", { inherent: true }); };
+  const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+  const reports = (ally: Squad, foe: Squad, n: number) => Array.from({ length: n }, () => runSimulation(ally, [{ label: "t", squad: foe }], 1).perOpponent[0]?.report).filter(Boolean);
+
+  it("一力当先: 乱舞 is a 70% splash rate, not a probability (naBuff stays 50%)", () => {
+    const s = P("一力当先");
+    expect(s.ranbu).toBeCloseTo(0.7);
+    expect(s.naBuff).toBe(0.5);
+    expect(P("七本槍筆頭").ranbu).toBeCloseTo(0.92);
+  });
+  it("一力当先: normal attacks splash the target's squadmates in battle", () => {
+    const ally: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const logs = reports(ally, weak, 30).flatMap(r => r!.logs);
+    expect(logs.some(l => l.tacticName === "乱舞" && l.actor === "成田甲斐" && (l.damage ?? 0) > 0)).toBe(true);
+  });
+  it("回天転運: 「2つ浄化」now parses and the cleanse fires in battle", () => {
+    expect(P("回天転運").cleanse).toBe(2);
+    const ally: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-北条氏康", "g-武田信玄", "g-成田甲斐"], tactics: ["t-回天転運", "t-会盟の陣", "t-文武両道", "t-乱世の華", "t-乗勝追撃", "t-一力当先"], ranks: [0, 1, 0] };
+    const logs = reports(ally, weak, 30).flatMap(r => r!.logs);
+    expect(logs.some(l => l.tacticName === "回天転運" && l.effects.includes("浄化"))).toBe(true);
+  });
+  it("離反・心攻: 数値先行記法を優先し、句を跨いだ誤読をしない", () => {
+    expect(P("信義貫徹").grant.離反).toBe(15); // was 156 (clause-crossing)
+    expect(PI("鬼玄蕃").grant.離反).toBe(18); // was 118 (damage rate)
+    expect(P("勇志不抜").grant.離反).toBe(24); // was 50 (fallback)
+    expect(P("末世の道者").grant.心攻).toBe(14); // was 10 (武勇低下の数値)
+    expect(P("積水成淵").grant.心攻).toBe(22);
+    expect(P("尼御台").grant).toEqual({ 離反: 24, 心攻: 24 });
+  });
+  it("休養・回生: 後方の回復率を読む。一心一徳は直接回復も潰れない", () => {
+    expect(PI("非常の器").grant.休養).toBe(66);
+    expect(P("懐柔").grant.休養).toBe(88);
+    const isshin = P("一心一徳");
+    expect(isshin.grant.休養).toBe(76);
+    expect(isshin.heal).toBe(60);
+    expect(P("股肱之臣").grant.回生).toBe(54);
+  });
+  it("会心: 範囲記法（A%〜B%）を最大値で読む", () => {
+    expect(P("勇猛無比").crit).toBeCloseTo(0.25);
+    expect(P("血戦奮闘").crit).toBeCloseTo(0.4);
+    expect(P("赤備え隊").crit).toBeCloseTo(0.35);
+    expect(P("驍勇善戦").crit).toBeCloseTo(0.4);
+    expect(P("雷神切り").crit).toBeCloseTo(0.5);
+  });
+  it("連撃: 「連撃（70%）」「連撃を付与」を読む。自己反動は selfDmgDown に分離", () => {
+    expect(P("全力戦闘").rengeki).toBeCloseTo(0.7);
+    const funsen = P("奮戦");
+    expect(funsen.rengeki).toBe(1);
+    expect(funsen.selfDmgDown).toBeCloseTo(0.15);
+    expect(funsen.dmgDown).toBe(0);
+    const gyomoku = P("魚目混珠");
+    expect(gyomoku.selfDmgDown).toBeCloseTo(0.5);
+    expect(gyomoku.dmgDown).toBe(0);
+  });
+  it("与ダメージ低下: が型・範囲型を読む。種別限定（突撃戦法）は汎用に漏らさない", () => {
+    expect(P("離心の計").dmgDown).toBeCloseTo(0.5);
+    expect(P("鉄砲猛撃").dmgDown).toBeCloseTo(0.12);
+    expect(PI("無刀取り").dmgDown).toBeCloseTo(0.15);
+    expect(PI("楼岸一番").dmgDown).toBeCloseTo(0.3);
+    expect(PI("剛の武者").dmgDown).toBeCloseTo(0.9);
+    expect(PI("傲岸不遜").dmgDown).toBe(0); // 「突撃戦法与ダメージが30%低下」は種別限定のため対象外
+  });
+  it("種別が武勇・知略の高い方で決まるダメージ（flexDmg）", () => {
+    expect(PI("楼岸一番").flexDmg).toBe(188);
+    expect(P("捨て身の采配").flexDmg).toBe(156);
+    expect(P("捨て身の采配").dmg).toEqual([]);
+  });
+  it("回復: 「回復する（回復率N%）」型と総回復率を読む", () => {
+    expect(PI("一舟軒").heal).toBe(152);
+    expect(P("剛毅木訥").heal).toBe(86);
+    expect(P("疾風迅雷").heal).toBe(96);
+    expect(PI("無刀取り").heal).toBe(128);
+    expect(PI("懐刀の謀臣").heal).toBe(138);
+    expect(PI("先陣鼓舞").dmg).toEqual([{ type: "兵刃", rate: 242 }]); // 「ダメージ （」の空白
+  });
+  it("継続ダメージ: 持続ダメージ型・括弧内範囲型・消滅・並記を読む", () => {
+    expect(P("紅蓮の炎").dots).toEqual([{ kind: "火傷", rate: 74, type: "計略" }]);
+    expect(P("破天の轟").dots).toEqual([{ kind: "火傷", rate: 105, type: "計略" }]);
+    expect(P("大智不智").dots).toEqual([{ kind: "消滅", rate: 104, type: "計略" }]);
+    expect(P("積水成淵").dots).toEqual([{ kind: "水攻め", rate: 88, type: "計略" }]); // 全角％
+    expect(PI("梟雄の計").dots).toEqual(expect.arrayContaining([{ kind: "中毒", rate: 96, type: "計略" }, { kind: "火傷", rate: 96, type: "計略" }]));
+  });
+  it("持続ターン: 準備ターンを拾わない。回復不可は healCut=1 として読む", () => {
+    expect(P("五里霧中").duration).toBe(2);
+    expect(P("水攻干計").duration).toBe(2);
+    expect(P("水攻干計").healCut).toBe(1);
+    expect(P("陣形崩し").duration).toBe(2);
+    expect(PI("笹の才蔵").duration).toBe(3);
+    expect(PI("笹の才蔵").healCut).toBe(1);
+    expect(P("不意打ち").duration).toBe(2);
+  });
+  it("ステータス増減: 範囲型の低下・素の範囲増加・を増加を読む", () => {
+    expect(P("機に乗ず").downStats).toEqual([{ idx: 1, amount: 140 }, { idx: 2, amount: 140 }]);
+    expect(P("母衣武者").upStats).toEqual([{ idx: 3, amount: 20 }]);
+    // 監査の偽陽性ガード: 範囲固定値は以前から正しく読めていた
+    expect(P("三河武士").upStats).toEqual([{ idx: 0, amount: 16 }]);
+    expect(P("戦意崩壊").downStats).toEqual([{ idx: 0, amount: 65 }, { idx: 2, amount: 65 }]);
+    expect(PI("一触即発").downStats).toEqual([{ idx: 0, amount: 140 }]);
+  });
+  it("発動率バフ: 突撃版・固有能動限定版・友軍単体・大将分を読む", () => {
+    expect(P("独立独歩").actSelfRush).toBeCloseTo(0.17);
+    expect(P("一行三昧").actSelf).toBeCloseTo(0.14); // マスター表記「能動戦」（法なし）
+    expect(P("疑心暗鬼").actSelfInherent).toBeCloseTo(0.12);
+    expect(P("融通自在").actAlly).toEqual({ delta: 0.12, inherentOnly: false });
+    expect(PI("仏の高力").actAlly).toEqual({ delta: 0.09, inherentOnly: false });
+    expect(PI("先陣鼓舞").actAlly).toEqual({ delta: 0.16, inherentOnly: true });
+    expect(PI("松柏之操").actLeader).toBeCloseTo(0.15);
+  });
+  it("制御の付与確率: 文面の確率を読む（気炎万丈85%）。括弧内の持続抽選は読まない", () => {
+    expect(P("気炎万丈").ctrlChance).toBeCloseTo(0.85);
+    expect(PI("不意打ち").ctrlChance).toBe(0.5); // 65%は「2ターンの間」の抽選
+    expect(PI("地黄八幡").ctrlChance).toBeCloseTo(0.36);
+  });
+  it("戦意消沈: 「1ターン目と3ターン目」を列挙として読み、両ターンに発動する", () => {
+    expect(P("戦意消沈").onceTurns).toEqual([0, 2]);
+    const ally: Squad = { ...emptySquad(), generals: ["g-三好実休", "g-武田信玄", "g-北条氏康"], tactics: ["t-戦意消沈", null, null, null, null, null] };
+    const logs = reports(ally, weak, 40).flatMap(r => r!.logs).filter(l => l.tacticName === "戦意消沈");
+    expect(logs.length).toBeGreaterThan(0);
+    expect(logs.every(l => l.turn === 1 || l.turn === 3)).toBe(true);
+    expect(logs.some(l => l.turn === 1 && l.effects.includes("疲弊"))).toBe(true);
+  });
+  it("反応ダメージ: 通常攻撃への反撃（ダメージ率N%）を読む", () => {
+    expect(PI("不屈の精神").reactDmg).toEqual({ onType: "兵刃", chance: 1, type: "兵刃", rate: 148, targets: 1, naOnly: true });
+    expect(PI("腹中鱗甲").reactDmg?.rate).toBe(52);
+    expect(P("大太刀力士隊").reactDmg?.rate).toBe(100);
+  });
+  it("三方挟撃: 発動率40%・速度-60・次ターン開始時の味方一斉攻撃174%", () => {
+    const s = P("三方挟撃");
+    expect(s.prob).toBeCloseTo(0.4);
+    expect(s.dmg).toEqual([]);
+    expect(s.flexDmg).toBe(0);
+    expect(s.allyStrike).toBeCloseTo(1.74);
+    expect(s.downStats).toEqual([{ idx: 3, amount: 60 }]);
+    expect(s.duration).toBe(1);
+    const ally: Squad = { ...emptySquad(), troop: "足軽", generals: ["g-武田信玄", "g-馬場信春", "g-山本勘助"], tactics: [null, null, "t-三方挟撃", null, null, null] };
+    const logs = reports(ally, weak, 40).flatMap(r => r!.logs);
+    // 一斉攻撃は信春以外の味方が担い手になる
+    expect(logs.some(l => l.tacticName === "三方挟撃" && l.actor !== "馬場信春" && (l.damage ?? 0) > 0)).toBe(true);
+  });
+  it("新規武将4名: マスター登録・能力（Wiki Lv50を四捨五入）・特性解決・編成可能", () => {
+    expect(GENERALS).toHaveLength(145);
+    const byName = (n: string) => GENERALS.find(g => g.name === n)!;
+    expect(byName("お江")).toMatchObject({ faction: "徳川", cost: 6, inherent: "風姿綽約" });
+    expect(byName("お江").stats).toEqual([154, 65, 169, 71]);
+    expect(byName("お初")).toMatchObject({ faction: "豊臣", cost: 6, inherent: "同気連枝" });
+    expect(byName("お初").stats).toEqual([143, 63, 171, 68]);
+    expect(byName("柳生宗厳")).toMatchObject({ faction: "徳川", cost: 7, inherent: "無刀取り" });
+    expect(byName("柳生宗厳").stats).toEqual([134, 205, 127, 147]);
+    expect(byName("上泉信綱")).toMatchObject({ faction: "上杉", cost: 7, inherent: "まろばし" });
+    expect(byName("上泉信綱").stats).toEqual([133, 219, 140, 122]);
+    for (const n of ["剣豪", "無形の位", "懸待表裡", "花枝招展", "手足之愛"]) expect(traitFor(n), n).toBeDefined();
+    expect(activeTraitNames(byName("お初"), 5)).toEqual(expect.arrayContaining(["手足之愛", "弓槍術Ⅱ", "攻勢Ⅱ"]));
+    expect(activeTraitNames(byName("上泉信綱"), 5)).toContain("血気Ⅰ");
+    expect(normSquad({ ...emptySquad(), generals: ["g-お初", "g-お江", "g-上泉信綱"] }).generals).toEqual(["g-お初", "g-お江", "g-上泉信綱"]);
   });
 });
