@@ -4,6 +4,7 @@ import {
   TRACKED_KEYS,
   applyPayload,
   buildPayload,
+  mergePayloads,
   payloadsEqual,
   sanitizePayload,
   type StorageLike,
@@ -99,5 +100,33 @@ describe("payloadsEqual", () => {
     expect(payloadsEqual({ a: "1" }, { a: "2" })).toBe(false);
     expect(payloadsEqual({ a: "1" }, { a: "1", b: "2" })).toBe(false);
     expect(payloadsEqual({}, {})).toBe(true);
+  });
+});
+
+describe("mergePayloads", () => {
+  it("keeps local-only keys and lets cloud win on shared keys", () => {
+    const local = {
+      [KEYS.ownedGenerals]: '["g-1"]',
+      [KEYS.draft("free")]: '"local-draft"',
+    };
+    const cloud = { [KEYS.draft("free")]: '"cloud-draft"', [KEYS.saved]: "[1]" };
+    expect(mergePayloads(local, cloud)).toEqual({
+      [KEYS.ownedGenerals]: '["g-1"]',
+      [KEYS.draft("free")]: '"cloud-draft"',
+      [KEYS.saved]: "[1]",
+    });
+  });
+
+  it("applying a merged payload never removes locally stored tracked keys", () => {
+    const { map, storage } = fakeStorage({
+      [KEYS.ownedGenerals]: '["g-1"]',
+      [KEYS.saved]: "[1,2]",
+    });
+    const cloud = { [KEYS.draft("free")]: '"draft"' };
+    const merged = mergePayloads(buildPayload(storage), cloud);
+    applyPayload(storage, merged);
+    expect(map.get(KEYS.ownedGenerals)).toBe('["g-1"]');
+    expect(map.get(KEYS.saved)).toBe("[1,2]");
+    expect(map.get(KEYS.draft("free"))).toBe('"draft"');
   });
 });

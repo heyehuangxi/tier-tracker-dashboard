@@ -54,6 +54,16 @@ export function sanitizePayload(input: unknown): SyncPayload {
   return payload;
 }
 
+/**
+ * ログイン時のマージ: クラウドにあるキーはクラウドの値を優先し、
+ * ローカルにしかないキーは保持する。別ブラウザで初めてログインしたときに、
+ * そのブラウザにしかないデータ（所持・保存編成など）がクラウド優先の
+ * 反映で消えてしまわないようにするための要。
+ */
+export function mergePayloads(local: SyncPayload, cloud: SyncPayload): SyncPayload {
+  return { ...local, ...cloud };
+}
+
 /** ペイロード同士が同じ内容かどうか */
 export function payloadsEqual(a: SyncPayload, b: SyncPayload): boolean {
   const aKeys = Object.keys(a);

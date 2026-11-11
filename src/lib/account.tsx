@@ -7,6 +7,7 @@ import {
   TRACKED_KEYS,
   applyPayload,
   buildPayload,
+  mergePayloads,
   payloadsEqual,
   sanitizePayload,
 } from "./account-sync";
@@ -41,7 +42,8 @@ export function authErrorMessage(message: string): string {
  * ログイン状態の管理と、localStorage とクラウドの同期を担う。
  *
  * - 未ログイン時は何もしない（従来どおりブラウザ内保存のみ）。
- * - ログイン時: クラウドに保存があればそれを localStorage へ反映（クラウド優先）。
+ * - ログイン時: クラウドの保存と現在のローカルデータをマージする
+ *   （同じキーはクラウド優先、ローカルにしかないキーは保持してクラウドへ取り込む）。
  *   保存がなければ、現在のローカルデータを初回移行としてアップロードする。
  * - ログイン中: 追跡キーが変わるたびに、少し待ってからまとめてアップロードする。
  * - Supabase 未設定の環境（環境変数なし）では全体が無効化され、従来動作になる。
@@ -96,11 +98,25 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (data) {
-        const payload = sanitizePayload(data.data);
-        const changed = applyPayload(window.localStorage, payload);
-        lastSent = JSON.stringify(payload);
+        const cloud = sanitizePayload(data.data);
+        const merged = mergePayloads(buildPayload(window.localStorage), cloud);
+        const changed = applyPayload(window.localStorage, merged);
         for (const key of changed) {
           window.dispatchEvent(new CustomEvent(LOCAL_CHANGE_EVENT, { detail: key }));
+        }
+        if (payloadsEqual(merged, cloud)) {
+          lastSent = JSON.stringify(merged);
+        } else {
+          // ローカルにしかなかったキーをクラウドへ取り込む
+          const { error: upError } = await client
+            .from("user_data")
+            .upsert({ user_id: uid, data: merged }, { onConflict: "user_id" });
+          if (cancelled || currentUid !== uid) return;
+          if (!upError) lastSent = JSON.stringify(merged);
+          else {
+            console.warn("アカウント同期のマージ保存に失敗しました", upError.message);
+            lastSent = JSON.stringify(cloud); // 次の変更時に merged が再送される
+          }
         }
       } else {
         // 初回ログイン: 今このブラウザにあるデータをそのままアカウントへ移す
