@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const EVT = "sri-local-change";
 
+/** writeLocal が発行する変更イベント名（アカウント同期などが購読する） */
+export const LOCAL_CHANGE_EVENT = EVT;
+
 export function readLocal<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }

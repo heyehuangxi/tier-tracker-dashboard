@@ -1,12 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { Check, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAccount } from "@/lib/account";
 import { MobileNav, TopNav } from "./navigation";
 
 const NoticeCtx = createContext<(msg: string) => void>(() => {});
 export const useNotice = () => useContext(NoticeCtx);
 
 export function AppShell({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  const { user, ready, signOut } = useAccount();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notice, setNotice] = useState("");
   useEffect(() => { if (!notice) return; const id = setTimeout(() => setNotice(""), 4500); return () => clearTimeout(id); }, [notice]);
@@ -21,7 +24,15 @@ export function AppShell({ title, description, children }: { title: string; desc
           </span>
         </a>
         <span className="v-text ml-auto hidden h-9 select-none text-[10px] text-gold lg:block" aria-hidden="true">真戦</span>
-        <Button variant="ghost" size="icon" className="ml-auto shrink-0 lg:hidden" onClick={() => setMobileOpen(v => !v)} aria-label={mobileOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={mobileOpen}>{mobileOpen ? <X /> : <Menu />}</Button>
+        <div className="ml-auto flex shrink-0 items-center gap-2 lg:ml-0">
+          {ready && (user ? <>
+            <span className="hidden max-w-[170px] truncate text-[11px] text-muted-foreground md:block" title={user.email}>{user.email}</span>
+            <Button variant="outline" size="sm" onClick={() => void signOut()}>ログアウト</Button>
+          </> : (
+            <Button asChild variant="outline" size="sm"><Link to="/login">ログイン</Link></Button>
+          ))}
+        </div>
+        <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={() => setMobileOpen(v => !v)} aria-label={mobileOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={mobileOpen}>{mobileOpen ? <X /> : <Menu />}</Button>
       </div>
       <div className="content-wrap hidden px-4 sm:px-6 lg:block">
         <TopNav onSelect={label => setNotice(`${label}は準備中です。`)} />
@@ -43,7 +54,7 @@ export function AppShell({ title, description, children }: { title: string; desc
     <footer className="content-wrap px-4 pb-8 sm:px-6">
       <div className="border-t border-border pt-4">
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          本サイト「真戦勝率測定」は『信長の野望 真戦』の非公式ファンツールです。ゲーム公式とは関係ありません。シミュレーション結果は試算であり、実際の戦闘結果を保証するものではありません。所持・編成などのデータはお使いのブラウザ内（localStorage）にのみ保存され、サーバーへ送信されることはありません。
+          本サイト「真戦勝率測定」は『信長の野望 真戦』の非公式ファンツールです。ゲーム公式とは関係ありません。シミュレーション結果は試算であり、実際の戦闘結果を保証するものではありません。所持・編成などのデータはお使いのブラウザ内（localStorage）に保存されます。ログインしている場合は、ご自身のアカウントにも保存され、他の端末から同じデータを利用できます。
         </p>
       </div>
     </footer>
