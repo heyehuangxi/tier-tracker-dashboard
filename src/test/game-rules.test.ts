@@ -177,7 +177,7 @@ describe("Troops, search and tactics", () => {
     expect(kitakawa.teppeki).toBe(2);
     expect(kitakawa.teppekiChance).toBeCloseTo(0.85);
     const kichiwako = parseTactic("鬼若子", "指揮", "100%", eff("長宗我部元親"), "S", { inherent: true });
-    expect(kichiwako.rengeki).toBeCloseTo(0.5);
+    expect(kichiwako.rengeki).toBeCloseTo(0.4); // 2026-11-11のバランス調整で50%→40%（対象は自軍全体に拡大）
     expect(kichiwako.upStats).toContainEqual({ idx: 0, amount: 18 });
     const hachiku = parseTactic("破竹の勢い", "受動", "100%", eff("加藤清正"), "S", { inherent: true });
     expect(hachiku.crit).toBeCloseTo(0.7);
@@ -1185,5 +1185,93 @@ describe("2026-11-11 screenshot wave 2 （三河弓兵隊の回生・三河武�
       if (base && next && next.actorSpeed === base.actorSpeed + 20) verified++;
     }
     expect(verified).toBeGreaterThan(0);
+  });
+});
+
+describe("2026-11-12 公式バランス調整（2026-11-11アップデート）の反映", () => {
+  const effOf = (name: string) => tacticById.get(`t-${name}`)?.effect ?? "";
+  const inhOf = (holder: string) => INHERENT_TACTICS.find(t => t.holder === holder);
+  const parseInh = (holder: string) => { const t = inhOf(holder)!; return parseTactic(t.name, t.kind, t.rate, t.effect, "S", { inherent: true, rateOverride: 1 }); };
+
+  it("智者楽水: 被ダメージ低下は22%で、兵刃・計略の両方に適用される", () => {
+    const s = parseTactic("知者楽水", "指揮", "100%", effOf("知者楽水"), "S");
+    expect(s.typeTaken).toContainEqual({ type: "兵刃", delta: 0.22 });
+    expect(s.typeTaken).toContainEqual({ type: "計略", delta: 0.22 });
+    expect(s.auraUntil).toBe(2); // 3ターン目まで
+  });
+
+  it("深慮遠謀: 与ダメージ低下30%が、3ターン目まで実際に戦闘へ適用される", () => {
+    const s = parseTactic("深慮遠謀", "指揮", "100%", effOf("深慮遠謀"), "S");
+    expect(s.dmgDown).toBeCloseTo(0.3);
+    expect(s.auraUntil).toBe(2);
+    const mine: Squad = {
+      ...emptySquad(), troop: "鉄砲", facLv: 5,
+      generals: ["g-明智光秀", "g-真田昌幸", "g-帰蝶"],
+      tactics: ["t-七十二の計", "t-奇策制勝", "t-回天転運", "t-深慮遠謀", "t-恵風和雨", "t-瞬息万変"],
+      alloc: [[0, 0, 50, 0], [0, 0, 50, 0], [0, 0, 50, 0]],
+    };
+    const res = runSimulation(mine, [{ label: "tpl", squad: templateToSquad(TEMPLATES[0]!, [0, 0, 0]) }], 20);
+    const logs = res.perOpponent[0]?.report?.logs ?? [];
+    expect(logs.some(l => l.tacticName === "深慮遠謀" && l.effects.includes("与ダメージ低下"))).toBe(true);
+  });
+
+  it("武田之赤備: 突撃の発動確率30%・ダメージ率152%、大将時は発動確率が+12%される", () => {
+    const s = parseInh("山県昌景");
+    expect(s.inner).toBeCloseTo(0.3);
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 152 }]);
+    expect(s.crit).toBeCloseTo(0.2);
+    // 乱数を0.35固定にすると、基礎30%では発動せず、大将技で0.42まで上がった場合だけ発動する
+    const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+    vi.spyOn(Math, "random").mockImplementation(() => 0.35);
+    try {
+      const asLeader: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-山県昌景", "g-武田信玄", "g-馬場信春"] };
+      const asSub: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-武田信玄", "g-山県昌景", "g-馬場信春"] };
+      const logsL = runSimulation(asLeader, [{ label: "weak", squad: weak }], 5).perOpponent[0]?.report?.logs ?? [];
+      const logsS = runSimulation(asSub, [{ label: "weak", squad: weak }], 5).perOpponent[0]?.report?.logs ?? [];
+      expect(logsL.some(l => l.tacticName === "武田之赤備" && l.actorSide === "自軍")).toBe(true);
+      expect(logsS.some(l => l.tacticName === "武田之赤備" && l.actorSide === "自軍")).toBe(false);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("鬼若子: 連撃40%が自軍全体に付与され、統率+18・4ターン目まで", () => {
+    const s = parseInh("長宗我部元親");
+    expect(s.rengeki).toBeCloseTo(0.4);
+    expect(s.upAll).toBe(true);
+    expect(s.upStats).toContainEqual({ idx: 0, amount: 18 });
+    expect(s.auraUntil).toBe(3); // 4ターン目まで
+  });
+
+  it("新生: 回復率70%（知略依存）が専用フィールドに入り、大将時は無条件に回復する", () => {
+    const s = parseInh("織田信長");
+    expect(s.shinsei).toBe(70);
+    expect(s.healStatIdx).toBe(2); // 知略依存
+    expect(s.dmgBuff).toBeCloseTo(0.14);
+    const foe = templateToSquad(TEMPLATES.find(t => t.label.includes("徳川"))!, [0, 0, 0]);
+    // 大将（無条件）: 被弾した戦闘では自身を回復する戦報が大半を占めるはず
+    const leaderSquad: Squad = { ...emptySquad(), generals: ["g-織田信長", "g-柴田勝家", "g-前田利家"] };
+    let leaderHealed = 0;
+    for (let i = 0; i < 30; i++) {
+      const rep = runSimulation(leaderSquad, [{ label: "tokugawa", squad: foe }], 20).perOpponent[0]?.report;
+      if ((rep?.units.find(u => u.name === "織田信長")?.healed ?? 0) > 0) leaderHealed++;
+    }
+    expect(leaderHealed).toBeGreaterThanOrEqual(10);
+    // 副将（条件つき）: 敵軍総兵力が70%を下回った後の行動から回復する。ラッチが壊れていれば30戦すべて0になる
+    // （テンプレート相手では大将死亡で戦闘が終わりやすく条件成立後の行動が回らないため、確実に総兵力が崩れる弱編成で検証する）
+    const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+    const subSquad: Squad = { ...emptySquad(), generals: ["g-上杉謙信", "g-織田信長", "g-本多忠勝"] };
+    let subHealed = 0;
+    for (let i = 0; i < 30; i++) {
+      const rep = runSimulation(subSquad, [{ label: "weak", squad: weak }], 20).perOpponent[0]?.report;
+      if ((rep?.units.find(u => u.name === "織田信長")?.healed ?? 0) > 0) subHealed++;
+    }
+    expect(subHealed).toBeGreaterThanOrEqual(10);
+  });
+
+  it("天下御免: 追加ダメージ率208%、前田慶次 の統率が成長1.66換算の145になる", () => {
+    const s = parseInh("前田慶次");
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 208 }]);
+    expect(s.ctrlKinds).toContain("混乱");
+    // 統率成長 1.28→1.66: Lv1=64（64+1.28×49=126.72→127で整合）から再計算し 64+1.66×49=145.34→145
+    expect(GENERALS.find(g => g.name === "前田慶次")?.stats[0]).toBe(145);
   });
 });
