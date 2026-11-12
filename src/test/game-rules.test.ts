@@ -1275,3 +1275,186 @@ describe("2026-11-12 公式バランス調整（2026-11-11アップデート）�
     expect(GENERALS.find(g => g.name === "前田慶次")?.stats[0]).toBe(145);
   });
 });
+
+describe("2026-11-12 上杉テンプレ診断の反映（縦横馳突・越後二天・越後先手組・軍神・勇猛無比・萎縮ほか）", () => {
+  const effOf = (name: string) => tacticById.get(`t-${name}`)?.effect ?? "";
+  const parseTac = (name: string) => { const t = tacticById.get(`t-${name}`)!; return parseTactic(t.name, t.kind, t.rate, t.effect, t.grade); };
+  const parseInh = (holder: string) => { const t = INHERENT_TACTICS.find(x => x.holder === holder)!; return parseTactic(t.name, t.kind, t.rate, t.effect, "S", { inherent: true, rateOverride: 1 }); };
+  const weakIds = GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id);
+  const weak: Squad = { ...emptySquad(), generals: weakIds };
+  const zeroRandom = () => vi.spyOn(Math, "random").mockImplementation(() => 0);
+  const lcgRandom = (seed0: number) => { let seed = seed0; return vi.spyOn(Math, "random").mockImplementation(() => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }); };
+
+  it("縦横馳突: 連撃が復活し、「封撃耐性」は敵への封撃付与ではなく自身の耐性として読まれる", () => {
+    const s = parseTac("縦横馳突");
+    expect(s.rengeki).toBe(1);
+    expect(s.ctrl).toBe(false);
+    expect(s.ctrlKinds).toEqual([]);
+    expect(s.ctrlResistKinds).toEqual(["封撃"]);
+  });
+
+  it("縦横馳突: 発動したターンの通常攻撃が2回になる（連撃）", () => {
+    zeroRandom();
+    try {
+      const base: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-柿崎景家", weakIds[1]!, weakIds[2]!], tactics: [null, null, null, null, null, null], alloc: [[0, 0, 0, 50], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const withTac: Squad = { ...base, tactics: ["t-縦横馳突", null, null, null, null, null] };
+      const naCount = (q: Squad) => (runSimulation(q, [{ label: "weak", squad: weak }], 5).perOpponent[0]?.report?.logs ?? []).filter(l => l.turn === 1 && l.kind === "通常攻撃" && l.actor === "柿崎景家").length;
+      expect(naCount(withTac)).toBe(2);
+      expect(naCount(base)).toBe(1);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("越後二天: 追加打撃50%・条件つき回復78%が専用フィールドに入り、本体は重複排除で1ヒットのまま", () => {
+    const s = parseInh("柿崎景家");
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 108 }]);
+    expect(s.nitenExtra).toBeCloseTo(0.5);
+    expect(s.nitenHeal).toBe(78);
+    expect(s.ctrlKinds).toContain("無策");
+    expect(s.ctrlChance).toBeCloseTo(0.4);
+  });
+
+  it("越後二天: 大将時は追加打撃が発生し、1ターン目に本体＋追加の2件のダメージが出る", () => {
+    zeroRandom();
+    try {
+      const q: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-柿崎景家", weakIds[1]!, weakIds[2]!], tactics: [null, null, null, null, null, null], alloc: [[0, 0, 0, 50], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const logs = runSimulation(q, [{ label: "weak", squad: weak }], 5).perOpponent[0]?.report?.logs ?? [];
+      expect(logs.filter(l => l.turn === 1 && l.tacticName === "越後二天" && (l.damage ?? 0) > 0).length).toBeGreaterThanOrEqual(2);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("越後二天: 回復は通常攻撃の対象がすでに無策状態の場合だけ発動する", () => {
+    zeroRandom();
+    try {
+      // 槍弾正（固有＋装備）で敵大将へ無策を2重に付与すると、大将の行動で1つ消費されてもう1つが残る。
+      // その状態で景家の二天が通常攻撃すると、対象が無策済みのため回復が発動する
+      const foe: Squad = { ...emptySquad(), generals: ["g-武田信玄", weakIds[1]!, weakIds[2]!] };
+      const withMusaku: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-柿崎景家", "g-保科正俊", "g-甘粕景持"], tactics: [null, null, null, null, "t-槍弾正", null], alloc: [[0, 0, 0, 0], [0, 0, 0, 120], [0, 0, 0, 120]] };
+      const control: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-柿崎景家", weakIds[0]!, weakIds[2]!], tactics: [null, null, null, null, null, null] };
+      const healedOf = (q: Squad) => runSimulation(q, [{ label: "foe", squad: foe }], 5).perOpponent[0]?.report?.units.find(u => u.name === "柿崎景家")?.healed ?? 0;
+      expect(healedOf(withMusaku)).toBeGreaterThan(0);
+      // 無策の供給源が無い編成では、二天自身の無策（持続1ターン）は次の発動まで残らないため回復は一切起きない
+      expect(healedOf(control)).toBe(0);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("越後先手組: 2ターン目から毎ターン回復が発動し、1ターン目には発動しない", () => {
+    const s = parseTac("越後先手組");
+    expect(s.senteHeal).toEqual({ chance: 0.35, rate: 78 });
+    lcgRandom(987654321);
+    try {
+      const tpl = TEMPLATES.find(t => t.label.includes("上杉/騎兵"))!;
+      const q = templateToSquad(tpl, [0, 0, 0]);
+      let battlesWithHeal = 0;
+      const N = 30;
+      for (let i = 0; i < N; i++) {
+        const logs = runSimulation(q, [{ label: "weak", squad: weak }], 20).perOpponent[0]?.report?.logs ?? [];
+        const heals = logs.filter(l => l.tacticName === "越後先手組" && (l.heal ?? 0) > 0);
+        if (heals.length) battlesWithHeal++;
+        // ターン開始時の回復は2ターン目（表示ターン2）以降だけ
+        expect(heals.every(l => l.turn >= 2)).toBe(true);
+      }
+      expect(battlesWithHeal).toBeGreaterThanOrEqual(N / 2);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("軍神「溜め」: 上昇率が武勇依存で平坦な+10%/スタックを超え、+160%を超えない", () => {
+    lcgRandom(24681357);
+    try {
+      const q: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-上杉謙信", "g-柿崎景家", "g-宇佐美定満"] };
+      let found: { stacks: number; pct: number } | undefined;
+      for (let i = 0; i < 30 && !found; i++) {
+        const logs = runSimulation(q, [{ label: "weak", squad: weak }], 20).perOpponent[0]?.report?.logs ?? [];
+        for (const l of logs) {
+          const m = l.effects[0]?.match(/^溜め×(\d+)$/);
+          const pm = l.segments.map(sg => sg.text).join("").match(/通常攻撃ダメージ\+(\d+)%/);
+          if (m && pm) { found = { stacks: Number(m[1]), pct: Number(pm[1]) }; break; }
+        }
+      }
+      expect(found).toBeDefined();
+      // 謙信の実効武勇では1スタック≈+12%以上になる（従来の平坦+10%ではない）ことと、上限+160%の確認
+      expect(found!.pct).toBeGreaterThan(found!.stacks * 10);
+      expect(found!.pct).toBeLessThanOrEqual(160);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("勇猛無比: Wiki値でダメージ率136%・会心25%、追加会心（65%で+15%）が句ごとに読まれる", () => {
+    const s = parseTac("勇猛無比");
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 136 }]);
+    expect(s.crit).toBeCloseTo(0.25);
+    expect(s.critExtra).toEqual({ chance: 0.65, rate: 0.15 });
+  });
+
+  it("追い崩し: 萎縮が確定付与として読まれ、萎縮した敵の指揮戦法（伊達の粋）が止まる", () => {
+    const s = parseTac("追い崩し");
+    expect(s.ctrl).toBe(true);
+    expect(s.ctrlKinds).toEqual(["萎縮"]);
+    expect(s.ctrlChance).toBe(1);
+    zeroRandom();
+    try {
+      const foe: Squad = { ...emptySquad(), generals: ["g-伊達政宗", weakIds[1]!, weakIds[2]!] };
+      const withOi: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-宇佐美定満", weakIds[1]!, weakIds[2]!], tactics: ["t-追い崩し", null, null, null, null, null], alloc: [[0, 0, 0, 100], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const control: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-宇佐美定満", weakIds[1]!, weakIds[2]!], tactics: [null, null, null, null, null, null], alloc: [[0, 0, 0, 100], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const suiHits = (q: Squad) => (runSimulation(q, [{ label: "foe", squad: foe }], 5).perOpponent[0]?.report?.logs ?? []).filter(l => l.tacticName === "伊達の粋" && (l.damage ?? 0) > 0).length;
+      // 定満が毎ターン先手で萎縮を付け直すため、政宗は戦闘を通して粋を消費できない
+      expect(suiHits(withOi)).toBe(0);
+      expect(suiHits(control)).toBeGreaterThan(0);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("萎縮: 対象の指揮オーラ（鬼若子の連撃）が止まり、味方の通常攻撃が1回だけになる", () => {
+    zeroRandom();
+    try {
+      const foe: Squad = { ...emptySquad(), generals: ["g-長宗我部元親", "g-柴田勝家", "g-前田利家"] };
+      const withOi: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-宇佐美定満", weakIds[1]!, weakIds[2]!], tactics: ["t-追い崩し", null, null, null, null, null], alloc: [[0, 0, 0, 100], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const control: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-宇佐美定満", weakIds[1]!, weakIds[2]!], tactics: [null, null, null, null, null, null], alloc: [[0, 0, 0, 100], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const naCount = (q: Squad, name: string) => (runSimulation(q, [{ label: "foe", squad: foe }], 5).perOpponent[0]?.report?.logs ?? []).filter(l => l.turn === 1 && l.kind === "通常攻撃" && l.actor === name).length;
+      // 鬼若子の連撃（確率40%）は乱数0では常時発動するが、元親が萎縮している間はオーラごと止まる
+      expect(naCount(withOi, "柴田勝家")).toBe(1);
+      expect(naCount(control, "柴田勝家")).toBe(2);
+      expect(naCount(withOi, "前田利家")).toBe(1);
+      expect(naCount(control, "前田利家")).toBe(2);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("越後流軍学: 能動発動時に自軍全体へ制御耐性が付与され、敵の封撃（家中整序）が無効化される", () => {
+    const s = parseInh("宇佐美定満");
+    expect(s.resistGrant).toEqual({ chance: 0.5, kinds: ["封撃", "無策", "威圧", "疲弊"], dur: 2 });
+    expect(s.actSelf).toBeCloseTo(0.2);
+    zeroRandom();
+    try {
+      const foe: Squad = { ...emptySquad(), generals: [weakIds[0]!, weakIds[1]!, weakIds[2]!], tactics: ["t-家中整序", null, null, null, null, null] };
+      const withSad: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-宇佐美定満", weakIds[1]!, weakIds[2]!], tactics: ["t-直諫敢行", "t-追い崩し", null, null, null, null], alloc: [[0, 0, 0, 100], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const control: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-甘粕景持", weakIds[1]!, weakIds[2]!], tactics: ["t-直諫敢行", "t-追い崩し", null, null, null, null], alloc: [[0, 0, 0, 100], [0, 0, 0, 0], [0, 0, 0, 0]] };
+      const kajLogs = (q: Squad) => (runSimulation(q, [{ label: "foe", squad: foe }], 5).perOpponent[0]?.report?.logs ?? []).filter(l => l.tacticName === "家中整序");
+      // 定満が先手で直諫敢行を発動 → 耐性付与（抽選は封撃に固定される）→ 家中整序の封撃が無効化される
+      expect(kajLogs(withSad).some(l => l.effects.includes("制御無効"))).toBe(true);
+      const ctrl = kajLogs(control);
+      expect(ctrl.some(l => l.effects.includes("制御無効"))).toBe(false);
+      expect(ctrl.some(l => l.effects.includes("封撃"))).toBe(true);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("義の将: 混乱への耐性として働き、敵陣攪乱の混乱が上杉謙信に付かない（数値が無いため50%の暫定近似）", () => {
+    zeroRandom();
+    try {
+      const foe: Squad = { ...emptySquad(), generals: [weakIds[0]!, weakIds[1]!, weakIds[2]!], tactics: ["t-敵陣攪乱", null, null, null, null, null] };
+      const kenshin: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-上杉謙信", weakIds[1]!, weakIds[2]!] };
+      // 対照は無策を付与しない武将にする（柿崎景家だと二天の無策で敵陣攪乱自体が封じられてしまう）
+      const control: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-甘粕景持", weakIds[1]!, weakIds[2]!] };
+      const logsK = runSimulation(kenshin, [{ label: "foe", squad: foe }], 5).perOpponent[0]?.report?.logs ?? [];
+      // 1ターン目、敵陣攪乱は大将の謙信を狙い、義の将の耐性で無効化される
+      expect(logsK.some(l => l.turn === 1 && l.tacticName === "敵陣攪乱" && l.effects.includes("制御無効"))).toBe(true);
+      const logsS = runSimulation(control, [{ label: "foe", squad: foe }], 5).perOpponent[0]?.report?.logs ?? [];
+      // 耐性の無い武将には混乱がそのまま付く
+      expect(logsS.some(l => l.turn === 1 && l.tacticName === "敵陣攪乱" && l.effects.includes("混乱"))).toBe(true);
+      expect(logsS.some(l => l.tacticName === "敵陣攪乱" && l.effects.includes("制御無効"))).toBe(false);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it("直諫敢行: 対象は自軍複数（2名）として読まれ、被ダメージ低下24%は従来どおり", () => {
+    const s = parseTac("直諫敢行");
+    expect(s.allyTargets).toBe(2);
+    expect(s.takenDown).toBeCloseTo(0.24);
+    expect(effOf("直諫敢行")).toContain("最大2回まで重ねがけ可能");
+  });
+});
