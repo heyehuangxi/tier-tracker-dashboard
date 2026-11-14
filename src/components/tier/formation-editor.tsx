@@ -10,6 +10,7 @@ import { FactionTabs } from "./faction-tabs";
 import { SearchSelect } from "./search-select";
 import { GeneralFace } from "./general-face";
 import { TROOP_TYPES, normalizeTroop } from "@/lib/sengoku-data";
+import { FreeWinRate } from "./free-win-rate";
 
 // 自由・共存編成では属性ポイントの初期値を100とする（測定・テンプレートは従来どおり50）
 const ALLOC_BASE = 100;
@@ -90,6 +91,7 @@ export function FormationEditor({ mode }: { mode: Mode }) {
       </section>)}
     </div>
     {squads.length < MAX_SQUADS && <Button variant="ghost" className="w-full border border-dashed border-border text-xs text-muted-foreground" onClick={() => setSquads([...squads, emptySquad()])}><PlusI />部隊を追加（{squads.length}/{MAX_SQUADS}）</Button>}
+    {!coexist && <FreeWinRate squads={squads} />}
   </>;
 }
 

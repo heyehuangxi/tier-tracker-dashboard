@@ -1,6 +1,9 @@
 // 勝率測定 戦闘シミュレーター（ブラウザ内で完結する簡易モデル）
 import { generalById, tacticById, inherentByHolder, traitFor, activeTraitNames, STAT_NAMES, pointsFor, effectiveFaction, hasFactionBonus, buffed, normalizeTroop, troopDamageMultiplier, troopLevelFor, TROOP_LEVEL_STAT_RATE, type TroopType, type Squad, type Stats } from "./sengoku-data";
 
+/** 通常の勝率測定で1対戦あたりに実行する回数（lightは別途50回）。 */
+export const STANDARD_SIMULATION_RUNS = 500;
+
 export type TemplateMember = { name: string; tactics: [string, string]; alloc: string[] };
 export type Template = { label: string; troop: TroopType; members: TemplateMember[] };
 

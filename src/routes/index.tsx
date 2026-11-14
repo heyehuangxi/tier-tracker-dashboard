@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { WinRatePage } from "@/components/tier/tier-page";
+import { STANDARD_SIMULATION_RUNS } from "@/lib/simulator";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -10,5 +11,5 @@ export const Route = createFileRoute("/")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
-  component: () => <WinRatePage title="勝率測定" perMatch={500} />,
+  component: () => <WinRatePage title="勝率測定" perMatch={STANDARD_SIMULATION_RUNS} />,
 });

@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { activeTraitNames, applyAlloc, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, pointsFor, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
-import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
+import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, STANDARD_SIMULATION_RUNS, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
+  it("uses the standard 500 runs for immediate free-formation win-rate checks", () => {
+    expect(STANDARD_SIMULATION_RUNS).toBe(500);
+  });
   it("applies all four directional troop advantages and neutral pairings", () => {
     for (const troop of TROOP_TYPES) {
       const weaker = TROOP_ADVANTAGE[troop];
