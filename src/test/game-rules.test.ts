@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, pointsFor, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
+import { activeTraitNames, applyAlloc, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, pointsFor, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
 import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
@@ -1589,5 +1589,17 @@ describe("2026-11-13 診断反映（比翼連理・水の如し・電光雷轟�
   it("耐苦鍛錬: 自軍大将への援護は3ターン目まで（内部ターン2）として読まれる", () => {
     const s = parseInh("千坂景親");
     expect(s.leaderCoverUntil).toBe(2);
+  });
+});
+
+describe("Attribute point sliders", () => {
+  it("moves only the touched attribute and borrows from the others at the cap", () => {
+    expect(applyAlloc([0, 0, 0, 0], 2, 45, 100)).toEqual([0, 0, 45, 0]);
+    expect(applyAlloc([10, 10, 10, 10], 0, 100, 100)).toEqual([100, 0, 0, 0]);
+    expect(applyAlloc([50, 50, 0, 0], 3, 50, 100)).toEqual([0, 50, 0, 50]);
+    expect(applyAlloc([100, 0, 0, 0], 1, 1, 100)).toEqual([99, 1, 0, 0]);
+    expect(applyAlloc([0, 0, 0, 0], 0, 250, 100)).toEqual([100, 0, 0, 0]);
+    expect(applyAlloc([10, 0, 0, 0], 0, -5, 100)).toEqual([0, 0, 0, 0]);
+    expect(applyAlloc([33, 33, 34, 0], 1, 100, 100).reduce((a, b) => a + b, 0)).toBe(100);
   });
 });

@@ -170,3 +170,23 @@ export function hasFactionBonus(gens: (string | null)[]) {
   return f.every(x => x && x === f[0]);
 }
 export const buffed = (v: number, on: boolean) => (on ? Math.round(v * (1 + FACTION_BONUS)) : v);
+
+/**
+ * 属性ポイント配分：触った項目だけを動かし、合計が上限を超えた分は他の項目から自動で引く。
+ * 各スライダーは 0〜total を独立して指せる（他と連動して先に動かさない）。
+ */
+export function applyAlloc(cur: number[], k: number, v: number, total: number): number[] {
+  const cap = Math.max(0, Math.floor(Number.isFinite(total) ? total : 0));
+  const next = [0, 1, 2, 3].map(j => { const raw = cur[j] ?? 0; return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0; });
+  const want = Number.isFinite(v) ? Math.floor(v) : 0;
+  next[k] = Math.max(0, Math.min(cap, want));
+  let over = next.reduce((a, b) => a + b, 0) - cap;
+  for (const j of [0, 1, 2, 3]) {
+    if (j === k || over <= 0) continue;
+    const have = next[j] ?? 0;
+    const take = Math.min(have, over);
+    next[j] = have - take;
+    over -= take;
+  }
+  return next;
+}
