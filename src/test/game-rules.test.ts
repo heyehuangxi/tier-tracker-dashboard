@@ -1458,3 +1458,136 @@ describe("2026-11-12 上杉テンプレ診断の反映（縦横馳突・越後�
     expect(effOf("直諫敢行")).toContain("最大2回まで重ねがけ可能");
   });
 });
+
+describe("2026-11-13 診断反映（比翼連理・水の如し・電光雷轟・海道一・自軍大将への付与）", () => {
+  const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+  const parseInh = (holder: string) => { const t = INHERENT_TACTICS.find(x => x.holder === holder)!; return parseTactic(t.name, t.kind, t.rate, t.effect, "S", { inherent: true, rateOverride: 1 }); };
+
+  it("比翼連理: 蓄積率75%・ダメージ率92%・発動80%が専用フィールドに入る", () => {
+    const s = parseInh("ねね");
+    expect(s.hiyokuAccum).toBeCloseTo(0.75);
+    expect(s.hiyokuRate).toBe(92);
+    expect(s.inner).toBeCloseTo(0.8);
+  });
+
+  it("比翼連理: 自軍の回復が蓄積され、大将の行動終了時にダメージへ変換される", () => {
+    const squad: Squad = { ...emptySquad(), troop: "弓兵", generals: ["g-黒田官兵衛", "g-ねね", "g-豊臣秀吉"] };
+    let seen = false;
+    for (let i = 0; i < 30 && !seen; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      if ((rep?.logs ?? []).some(l => l.tacticName === "比翼連理" && (l.damage ?? 0) > 0 && l.actor === "ねね")) seen = true;
+    }
+    expect(seen).toBe(true);
+  });
+
+  it("水の如し: 発動確率はダメージ句の60%（奇策句の48%ではない）で、ヒット数は1〜2回", () => {
+    const s = parseInh("黒田官兵衛");
+    expect(s.inner).toBeCloseTo(0.6);
+    expect(s.hitMin).toBe(1);
+    expect(s.hitMax).toBe(2);
+    expect(s.dmg).toEqual([{ type: "計略", rate: 88 }]);
+  });
+
+  it("水の如し: 1ターンに2ヒット出る戦闘がある（1〜2回の複数ヒット）", () => {
+    const squad: Squad = { ...emptySquad(), troop: "弓兵", generals: ["g-黒田官兵衛", "g-ねね", "g-豊臣秀吉"] };
+    let seen = false;
+    for (let i = 0; i < 40 && !seen; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      const byTurn = new Map<number, number>();
+      for (const l of rep?.logs ?? []) if (l.tacticName === "水の如し" && l.actor === "黒田官兵衛" && (l.damage ?? 0) > 0) byTurn.set(l.turn, (byTurn.get(l.turn) ?? 0) + 1);
+      if ([...byTurn.values()].some(n => n >= 2)) seen = true;
+    }
+    expect(seen).toBe(true);
+  });
+
+  it("電光雷轟: 雷鳴52%が専用フィールドに入り、汎用ダメージには残らない", () => {
+    const s = parseInh("立花道雪");
+    expect(s.raimei).toBe(52);
+    expect(s.dmg).toEqual([]);
+    expect(s.ctrlKinds).toContain("麻痺");
+  });
+
+  it("電光雷轟: 麻痺付与が出て、麻痺状態中の対象には雷鳴（全体・兵刃）が発動する", () => {
+    const squad: Squad = { ...emptySquad(), troop: "足軽", generals: ["g-立花誾千代", "g-立花道雪", "g-北条氏康"] };
+    let mahi = false, raimei = false;
+    for (let i = 0; i < 60 && !(mahi && raimei); i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) {
+        if (l.tacticName === "電光雷轟" && l.effects.includes("麻痺")) mahi = true;
+        if (l.tacticName === "雷鳴" && (l.damage ?? 0) > 0) raimei = true;
+      }
+    }
+    expect(mahi).toBe(true);
+    expect(raimei).toBe(true);
+  });
+
+  it("海道一: 射撃2回が専用フィールドに入る", () => {
+    const s = parseInh("今川義元");
+    expect(s.shots).toBe(2);
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 134 }, { type: "計略", rate: 134 }]);
+  });
+
+  it("海道一: 1回の発動で3ヒット以上（兵刃・計略×2射）出る戦闘がある", () => {
+    const squad: Squad = { ...emptySquad(), troop: "弓兵", generals: ["g-今川義元", "g-寿桂尼", "g-立花道雪"] };
+    let seen = false;
+    for (let i = 0; i < 40 && !seen; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      const byTurn = new Map<number, number>();
+      for (const l of rep?.logs ?? []) if (l.tacticName === "海道一" && l.actor === "今川義元" && (l.damage ?? 0) > 0) byTurn.set(l.turn, (byTurn.get(l.turn) ?? 0) + 1);
+      if ([...byTurn.values()].some(n => n >= 3)) seen = true;
+    }
+    expect(seen).toBe(true);
+  });
+
+  it("尼御台: 付与先・期間・依存が専用フィールドに入る（洞察2ターン目まで→離反・心攻は終了後4ターン）", () => {
+    const s = parseInh("寿桂尼");
+    expect(s.leaderInsightUntil).toBe(1);
+    expect(s.leaderTaken).toEqual({ delta: 0.18, statIdx: 2, untilTurn: 1 });
+    expect(s.grantToLeader).toEqual({ fromTurn: 2, untilTurn: 5, statIdx: 2 });
+    expect(s.grant).toEqual({ 離反: 24, 心攻: 24 });
+  });
+
+  it("尼御台: 離反・心攻の吸収回復は所持者ではなく大将に、表示3ターン目以降だけ現れる", () => {
+    const squad: Squad = { ...emptySquad(), troop: "弓兵", generals: ["g-今川義元", "g-寿桂尼", "g-立花道雪"] };
+    let seen = false;
+    for (let i = 0; i < 40; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) {
+        if ((l.tacticName === "離反" || l.tacticName === "心攻") && (l.heal ?? 0) > 0) {
+          expect(l.actor).toBe("今川義元");
+          expect(l.turn).toBeGreaterThanOrEqual(3);
+          seen = true;
+        }
+      }
+    }
+    expect(seen).toBe(true);
+  });
+
+  it("自軍大将への付与の点検: 戦意崩壊の鉄壁2回は大将宛てとして従来どおり読まれる（相違なし）", () => {
+    const t = tacticById.get("t-戦意崩壊")!;
+    const s = parseTactic(t.name, t.kind, t.rate, t.effect, t.grade);
+    expect(s.teppeki).toBe(2);
+    expect(s.teppekiToLeader).toBe(true);
+  });
+
+  it("種子島銃: 大将の固有発動率+15%と連動ダメージ152%・2名が専用フィールドに入る", () => {
+    const s = parseInh("種子島時堯");
+    expect(s.leaderCdBuff).toBeCloseTo(0.15);
+    expect(s.cdRider).toEqual({ rate: 152, targets: 2 });
+  });
+
+  it("種子島銃: 大将のクールタイム付き固有が発動すると、所持者の連動ダメージが出る", () => {
+    const squad: Squad = { ...emptySquad(), troop: "足軽", generals: ["g-柴田勝家", "g-種子島時堯", "g-北条氏康"] };
+    let seen = false;
+    for (let i = 0; i < 60 && !seen; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      if ((rep?.logs ?? []).some(l => l.tacticName === "種子島銃" && (l.damage ?? 0) > 0 && l.actor === "種子島時堯")) seen = true;
+    }
+    expect(seen).toBe(true);
+  });
+
+  it("耐苦鍛錬: 自軍大将への援護は3ターン目まで（内部ターン2）として読まれる", () => {
+    const s = parseInh("千坂景親");
+    expect(s.leaderCoverUntil).toBe(2);
+  });
+});
