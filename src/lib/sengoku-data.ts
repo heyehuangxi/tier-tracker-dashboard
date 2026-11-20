@@ -39,6 +39,9 @@ export const portraitUrlForGeneral = (g: General): string | undefined => portrai
 export const generalById = new Map(GENERALS.map(x => [x.id, x]));
 export const tacticById = new Map(TACTICS.map(x => [x.id, x]));
 
+/** 女性武将（恵風和雨の「自身が女性武将の場合」条項など、性別で分岐する効果の判定用。はてなの真戦攻略Wikiの武将ページの性別表記に基づく） */
+export const FEMALE_GENERALS: ReadonlySet<string> = new Set(["まつ", "帰蝶", "妻木煕子", "池田せん", "お市", "ねね", "成田甲斐", "諏訪姫", "仙桃院", "立花誾千代", "寿桂尼", "大祝鶴", "瑞溪院", "吉岡妙林", "お江", "お初"]);
+
 // 固有戦法マスター（提供データ: inherent-tactics.tsv を変換した inherent-master.json）
 export type InherentTactic = { name: string; holder: string; grade: "S" | "A"; kind: string; rate: string; prep: number; effect: string; leader: string };
 type IM = { n: string; holder: string; g: "S" | "A"; k: string; r: string; prep: string; e: string; leader: string };
@@ -170,23 +173,3 @@ export function hasFactionBonus(gens: (string | null)[]) {
   return f.every(x => x && x === f[0]);
 }
 export const buffed = (v: number, on: boolean) => (on ? Math.round(v * (1 + FACTION_BONUS)) : v);
-
-/**
- * 属性ポイント配分：触った項目だけを動かし、合計が上限を超えた分は他の項目から自動で引く。
- * 各スライダーは 0〜total を独立して指せる（他と連動して先に動かさない）。
- */
-export function applyAlloc(cur: number[], k: number, v: number, total: number): number[] {
-  const cap = Math.max(0, Math.floor(Number.isFinite(total) ? total : 0));
-  const next = [0, 1, 2, 3].map(j => { const raw = cur[j] ?? 0; return Number.isFinite(raw) ? Math.max(0, Math.floor(raw)) : 0; });
-  const want = Number.isFinite(v) ? Math.floor(v) : 0;
-  next[k] = Math.max(0, Math.min(cap, want));
-  let over = next.reduce((a, b) => a + b, 0) - cap;
-  for (const j of [0, 1, 2, 3]) {
-    if (j === k || over <= 0) continue;
-    const have = next[j] ?? 0;
-    const take = Math.min(have, over);
-    next[j] = have - take;
-    over -= take;
-  }
-  return next;
-}

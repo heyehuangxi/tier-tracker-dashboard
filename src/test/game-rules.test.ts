@@ -1,14 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { activeTraitNames, applyAlloc, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, pointsFor, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
-import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, STANDARD_SIMULATION_RUNS, TEMPLATES, templateToSquad } from "@/lib/simulator";
+import { activeTraitNames, decodeFormation, emptySquad, encodeFormation, GENERALS, INHERENT_TACTICS, inherentByHolder, normalizeTroop, normSquad, pointsFor, portraitUrlForName, tacticById, traitFor, TRAITS, TROOP_ADVANTAGE, TROOP_TYPES, troopDamageMultiplier, troopLevelFor, type Squad } from "@/lib/sengoku-data";
+import { parseTactic, RANGE23_P3, rollRange23, runSimulation, squadTraitEffects, TEMPLATES, templateToSquad } from "@/lib/simulator";
 import { candidateKey, generateRandomSquad, outcomeScore, tacticTroopCompatible } from "@/lib/explore";
 import { ALL_GENERAL_IDS, ALL_TACTIC_IDS, decodeOwned, encodeOwned, GENERALS as ALL_GENERALS, TACTICS as ALL_TACTICS, MAX_COST } from "@/lib/sengoku-data";
 import { matchesName } from "@/components/tier/search-select";
 
 describe("Troops, search and tactics", () => {
-  it("uses the standard 500 runs for immediate free-formation win-rate checks", () => {
-    expect(STANDARD_SIMULATION_RUNS).toBe(500);
-  });
   it("applies all four directional troop advantages and neutral pairings", () => {
     for (const troop of TROOP_TYPES) {
       const weaker = TROOP_ADVANTAGE[troop];
@@ -1069,15 +1066,18 @@ describe("2026-11-11 screenshot wave （全文スクリーンショット: 竜�
     expect(dealt(withK)).toBeGreaterThan(dealt(base) * 1.05);
   });
 
-  it("鉄砲僧兵: 休養の回復は1/2/5/6ターン目だけに現れる", () => {
+  it("鉄砲僧兵: 休養は1/2/5/6ターン目に付与される継続状態として持続し、付与ターン以外でも回復が現れる", () => {
+    // 2026-11-20 監査で修正: 休養は継続状態のため、従来の「付与ターンの開始時に1回だけ即時回復」ではなく
+    // 状態として保持し、各武将の行動開始時に回復する（持続は汎用付与と同じ付与ターン+2ターン）
     const squad: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-本願寺顕如", "g-長宗我部元親", "g-島津貴久"], tactics: ["t-鉄砲僧兵", null, null, null, null, null] };
     const turns = new Set<number>();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
-      for (const l of rep?.logs ?? []) if (l.tacticName === "鉄砲僧兵・休養") turns.add(l.turn);
+      for (const l of rep?.logs ?? []) if (l.tacticName === "休養" && l.actorSide === "自軍") turns.add(l.turn);
     }
     expect(turns.size).toBeGreaterThan(0);
-    for (const t of turns) expect([1, 2, 5, 6]).toContain(t); // ログの turn は1始まり
+    // 付与ターン（1/2/5/6）以外のターン（3/4/7/8）にも回復が現れる＝状態として持続している
+    expect([...turns].some(t => [3, 4, 7, 8].includes(t))).toBe(true); // ログの turn は1始まり
   });
 
   it("沈魚落雁: 通常攻撃を受けた側が攻撃者に制御を付与する（反応制御）", () => {
@@ -1595,14 +1595,114 @@ describe("2026-11-13 診断反映（比翼連理・水の如し・電光雷轟�
   });
 });
 
-describe("Attribute point sliders", () => {
-  it("moves only the touched attribute and borrows from the others at the cap", () => {
-    expect(applyAlloc([0, 0, 0, 0], 2, 45, 100)).toEqual([0, 0, 45, 0]);
-    expect(applyAlloc([10, 10, 10, 10], 0, 100, 100)).toEqual([100, 0, 0, 0]);
-    expect(applyAlloc([50, 50, 0, 0], 3, 50, 100)).toEqual([0, 50, 0, 50]);
-    expect(applyAlloc([100, 0, 0, 0], 1, 1, 100)).toEqual([99, 1, 0, 0]);
-    expect(applyAlloc([0, 0, 0, 0], 0, 250, 100)).toEqual([100, 0, 0, 0]);
-    expect(applyAlloc([10, 0, 0, 0], 0, -5, 100)).toEqual([0, 0, 0, 0]);
-    expect(applyAlloc([33, 33, 34, 0], 1, 100, 100).reduce((a, b) => a + b, 0)).toBe(100);
+describe("2026-11-20 fix wave (未収録戦法の追加と回復戦法の監査)", () => {
+  const P = (name: string) => { const t = ALL_TACTICS.find(x => x.name === name); const inh = INHERENT_TACTICS.find(x => x.name === name); const src = t ?? inh!; return parseTactic(src.name, src.kind, src.rate, src.effect, "S", { inherent: !t }); };
+  const PI = (name: string) => { const inh = INHERENT_TACTICS.find(x => x.name === name)!; return parseTactic(inh.name, inh.kind, inh.rate, inh.effect, "S", { inherent: true }); };
+  const weak: Squad = { ...emptySquad(), generals: GENERALS.filter(g => g.rarity === 4).slice(0, 3).map(g => g.id) };
+
+  it("燕飛: マスタに収録され、統率低下60と兵刃220%・単体として読まれる", () => {
+    const t = tacticById.get("t-燕飛");
+    expect(t).toBeDefined();
+    expect(t).toMatchObject({ grade: "S", kind: "能動", rate: "40%" });
+    const s = P("燕飛");
+    expect(s.prob).toBeCloseTo(0.4);
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 220 }]);
+    expect(s.downStats).toEqual([{ idx: 0, amount: 60 }]);
+    expect(s.duration).toBe(2);
+    expect(s.targets).toBe(1);
+  });
+
+  it("虚を衝く: マスタに収録され、即時ダメージではなく専用フィールド（全属性-38・兵刃184%）として読まれる", () => {
+    const t = tacticById.get("t-虚を衝く");
+    expect(t).toBeDefined();
+    expect(t).toMatchObject({ grade: "S", kind: "能動", rate: "35%" });
+    const s = P("虚を衝く");
+    expect(s.prob).toBeCloseTo(0.35);
+    expect(s.kyo).toEqual({ down: 38, rate: 184 });
+    expect(s.dmg).toEqual([]);
+    expect(s.targets).toBe(2);
+  });
+
+  it("虚を衝く: 発動するとマークが付き、遅延ダメージか全属性低下のどちらかが戦報に現れる", () => {
+    const squad: Squad = { ...emptySquad(), troop: "騎兵", generals: ["g-立花誾千代", "g-北条氏康", "g-武田信玄"], tactics: ["t-虚を衝く", null, null, null, null, null] };
+    let marked = 0, resolved = 0;
+    for (let i = 0; i < 40; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      const logs = rep?.logs ?? [];
+      if (logs.some(l => l.tacticName === "虚を衝く" && l.kind === "戦法")) marked++;
+      if (logs.some(l => l.tacticName === "虚を衝く" && ((l.damage ?? 0) > 0 || l.effects.includes("全属性低下")))) resolved++;
+    }
+    expect(marked).toBeGreaterThan(3);
+    expect(resolved).toBeGreaterThan(0);
+  });
+
+  it("恵風和雨: 全文（女性条項つき）として読まれ、偶数ターン限定と奇数ターン20%が入る", () => {
+    const s = P("恵風和雨");
+    expect(s.heal).toBe(122);
+    expect(s.healCount).toBe(2);
+    expect(s.inner).toBeCloseTo(0.8);
+    expect(s.evenTurnOnly).toBe(true);
+    expect(s.oddTurnChance).toBeCloseTo(0.2);
+  });
+
+  it("恵風和雨: 男性所持者では奇数ターンに回復が現れない", () => {
+    const squad: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-明智光秀", "g-豊臣秀吉", "g-黒田官兵衛"], tactics: ["t-恵風和雨", null, null, null, null, null] };
+    const turns = new Set<number>();
+    for (let i = 0; i < 30; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) if (l.tacticName === "恵風和雨" && l.kind === "回復") turns.add(l.turn);
+    }
+    expect(turns.size).toBeGreaterThan(0);
+    for (const t of turns) expect(t % 2).toBe(0); // ログの turn は1始まり。発動は偶数ターンのみ
+  });
+
+  it("内助の賢: 継続延長50%と条件つき回復96%が専用フィールドに入る", () => {
+    const s = PI("内助の賢");
+    expect(s.dotExtend).toBeCloseTo(0.5);
+    expect(s.naichiHeal).toBe(96);
+  });
+
+  it("内助の賢: 回復は偶数ターンにしか現れず、条件が揃えば実際に発動もする", () => {
+    const squad: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-明智光秀", "g-妻木煕子", "g-稲葉一鉄"], tactics: ["t-七十二の計", "t-奇策制勝", "t-恵風和雨", "t-気炎万丈", "t-鉄砲僧兵", "t-知者楽水"] };
+    const turns = new Set<number>();
+    let count = 0;
+    for (let i = 0; i < 80; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      for (const l of rep?.logs ?? []) if (l.tacticName === "内助の賢" && l.kind === "回復") { turns.add(l.turn); count++; }
+    }
+    for (const t of turns) expect(t % 2).toBe(0); // ログの turn は1始まり。発動は偶数ターンのみ
+    expect(count).toBeGreaterThan(0); // 時は今の継続状態が全員に揃えば発動する
+  });
+
+  it("疾風迅雷: 回復は条件つき専用フィールド（96%・武勇依存）に入る", () => {
+    const s = PI("疾風迅雷");
+    expect(s.shippuHeal).toEqual({ rate: 96, statIdx: 1 });
+    expect(s.dmg).toEqual([{ type: "兵刃", rate: 76 }]);
+    expect(s.ctrlChance).toBeCloseTo(0.5);
+  });
+
+  it("風流武者: 発動回数条件つきの回復132%と計略バフ+30%が専用フィールドに入る", () => {
+    const s = PI("風流武者");
+    expect(s.furyu?.healRate).toBe(132);
+    expect(s.furyu?.chance).toBeCloseTo(0.8);
+    expect(s.furyu?.buffDelta).toBeCloseTo(0.3);
+  });
+
+  it("風流武者: 実休が能動を発動すると回復が戦報に現れる", () => {
+    const squad: Squad = { ...emptySquad(), troop: "鉄砲", generals: ["g-伊達政宗", "g-三好実休", "g-真田昌幸"], tactics: [null, null, "t-瞬息万変", "t-回天転運", null, null] };
+    let seen = 0;
+    for (let i = 0; i < 40; i++) {
+      const rep = runSimulation(squad, [{ label: "weak", squad: weak }], 1).perOpponent[0]?.report;
+      if ((rep?.logs ?? []).some(l => l.tacticName === "風流武者" && l.kind === "回復")) seen++;
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+
+  it("所領役帳: 回生の持続は明記の2ターンとして読まれる", () => {
+    const s = P("所領役帳");
+    expect(s.grantDur).toBe(2);
+    expect(s.grant.回生).toBe(66);
+    expect(s.rebirthChance).toBeCloseTo(0.5);
+    expect(s.heal).toBe(212);
   });
 });
